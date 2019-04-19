@@ -35,7 +35,7 @@ CTR 预估模型在计算广告领域的关键地位来源于计算广告利润�
 
 实现这一目标的关键就在于预测用户 U（user）在某场景 C（context）下是否会观看某视频 V（video），以及观看该视频的观看时长是多少。这与计算广告中的 CTR 预估模型的区别仅在于将 A（ad）换成了 V（video），将构建 CTR=g(A, U, C) 的问题换成了构建 watch time=g（V, U, C）的问题。
 
-事实上，YouTube 的工程师们在那篇著名的工程论文“Deep Neural Networks for YouTube Recommendations”也非常明确提出了改造 CTR 预估模型为预测用户时长的深度学习推荐模型的方法。由 CTR 预估模型衍生出的泛效果模型共同构成了驱动互利网场景下的用户增长、使用时长增长、转化效果增长等一系列的关键商业指标的增长之心。
+事实上，YouTube 的工程师们在那篇著名的工程论文“[Deep Neural Networks for YouTube Recommendations][1]”也非常明确提出了改造 CTR 预估模型为预测用户时长的深度学习推荐模型的方法。由 CTR 预估模型衍生出的泛效果模型共同构成了驱动互利网场景下的用户增长、使用时长增长、转化效果增长等一系列的关键商业指标的增长之心。
 
 三、深度学习 CTR 预估模型专栏的结构
 
@@ -46,3 +46,11 @@ CTR 预估模型在计算广告领域的关键地位来源于计算广告利润�
 而实践部分将分为”模型实现与部署“和”模型业界应用“两部分。能够掌握从”模型理论“到”模型实现“再到”上线部署“的一整套技术栈对于算法工程师来说是重要的。最终的”业界应用”部分包括了 Google，Airbnb，Facebook，Alibaba 等业界知名互利网公司的 CTR 预估模型的设计和应用案例，希望读者能够从应用中学到更多实践中应该注意的技术细节。
 
 这是“深度学习 CTR 预估模型实践”的第一篇文章，期望你能从中受益。
+
+参考阅读：
+
+1. [重读 Youtube 深度学习推荐系统论文，字字珠玑，惊为神文][1]
+2. [YouTube 深度学习推荐系统的十大工程问题][2]
+
+[1]: https://mp.weixin.qq.com/s?__biz=MzU1NDA4NjU2MA==&mid=2247494669&idx=2&sn=b1ca666f647373b0de4be5da388e53bc&chksm=fbea55c2cc9ddcd4f909dd2ea65102d9e0637857dac813d35f71229d0c897a435077c987418f&scene=21#wechat_redirect
+[2]: https://mp.weixin.qq.com/s?__biz=MzU1NDA4NjU2MA==&mid=2247494791&idx=2&sn=643df72a5116807136e07a82db83b9cd&chksm=fbea5548cc9ddc5e07baffe20d23003227371c9a8f2dd515e60345a9f1775d079082bcbf2976&scene=21#wechat_redirect
