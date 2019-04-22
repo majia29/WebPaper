@@ -52,5 +52,5 @@ CTR 预估模型在计算广告领域的关键地位来源于计算广告利润�
 1. [重读 Youtube 深度学习推荐系统论文，字字珠玑，惊为神文][1]
 2. [YouTube 深度学习推荐系统的十大工程问题][2]
 
-[1]: https://mp.weixin.qq.com/s?__biz=MzU1NDA4NjU2MA==&mid=2247494669&idx=2&sn=b1ca666f647373b0de4be5da388e53bc&chksm=fbea55c2cc9ddcd4f909dd2ea65102d9e0637857dac813d35f71229d0c897a435077c987418f&scene=21#wechat_redirect
+[1]: mp-20190106-cdyoutube
 [2]: https://mp.weixin.qq.com/s?__biz=MzU1NDA4NjU2MA==&mid=2247494791&idx=2&sn=643df72a5116807136e07a82db83b9cd&chksm=fbea5548cc9ddc5e07baffe20d23003227371c9a8f2dd515e60345a9f1775d079082bcbf2976&scene=21#wechat_redirect
