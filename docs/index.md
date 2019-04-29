@@ -1,17 +1,11 @@
 
+**[2019-04]**
 
-**[2019-04-21]**
++ [谷歌、阿里等10大深度学习CTR模型最全演化图谱](1904-gu_ge_a_li_deng_10_da_shen_du_xue_xi_ctr_mo_xing_zui_quan_yan_hua_tu_pu)
++ [这一天还是来了：亚马逊利用AI监控员工工作效率，并生成解雇指令](1904-zhe_yi_tian_huan_shi_lai_le_ya_ma_xun_li_yong_ai_jian_kong_yuan_gong_gong_zuo_xiao_lv_bing_sheng_cheng_jie_gu_zhi_ling)
++ [老板总有新主意：我是怎么拖垮一家价值十亿美元大数据公司的](1904-lao_ban_zong_you_xin_zhu_yi_wo_shi_zen_me_tuo_kua_yi_jia_jia_zhi_shi_yi_mei_yuan_da_shu_ju_gong_si_de)
++ [分类模型与排序模型在推荐系统中的异同分析](1904-fen_lei_mo_xing_yu_pai_xu_mo_xing_zai_tui_jian_xi_tong_zhong_de_yi_tong_fen_xi)
 
-+ [写给机器学习从业者的12条宝贵建议](mp-20190421-xgjqxxcyz)
+**[2019-03]**
 
-**[2019-04-19]**
-
-+ [谷歌、阿里等10大深度学习CTR模型最全演化图谱](mp-20190419-ggald10d)
-
-**[2019-03-12]**
-
-+ [深度学习CTR预估模型凭什么成为互联网增长的关键？](mp-20190312-sdxxctry)
-
-**[2019-01-06]**
-
-+ [重读Youtube深度学习推荐系统论文，字字珠玑，惊为神文](mp-20190106-cdyoutube)
++ [服务平台化，知乎 HBase 实践](1903-fu_wu_ping_tai_hua_zhi_hu_hbase_shi_jian)

@@ -1,0 +1,11 @@
+
+*.DS_Store*
+
+*.pyc
+*.log
+
+drivers/*
+
+temp*
+passwd.db
+
