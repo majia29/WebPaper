@@ -5,7 +5,7 @@
 1. 传入一个公众号文章地址，输出一个符合通常的web logger页面命名规范的html页面，并将其中的图片格式转换为png。
 2. 页面上传到github.io，直接做为一个internet web页面供正常的浏览查看以及网摘。
 
-v0.1更新内容
+**v0.1更新内容**
 
 完成:
 
@@ -17,8 +17,19 @@ v0.1更新内容
 
 * 加入机器学习内容(自然语言处理相关)，做文章摘要，文章标签生成。
 
-调用方式:
+**使用方式**
+
+如果只做页面爬取，附带图片下载，则只需要命令行执行`python`脚本即可:
 
 ``` sh
 python mp2html.py https://www.infoq.cn/article/oZCcFAC7J4-01yFTG5r3
 ```
+
+如果也想发布到github.io，则需要做以下简单步骤即可:
+
+1. clone repo;
+2. repo setting "GitHub Pages" enable, "Pages Source" select "docs";
+3. run mp2html.py <url>
+4. git commit/push
+
+ok.
