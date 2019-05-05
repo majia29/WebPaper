@@ -6,6 +6,7 @@
 
 **[2019-04]**
 
++ [AutoML：机器学习的下一波浪潮](1904-automl_ji_qi_xue_xi_de_xia_yi_bo_lang_chao)
 + [这一天还是来了：亚马逊利用AI监控员工工作效率，并生成解雇指令](1904-zhe_yi_tian_huan_shi_lai_le_ya_ma_xun_li_yong_ai_jian_kong_yuan_gong_gong_zuo_xiao_lv_bing_sheng_cheng_jie_gu_zhi_ling)
 + [左耳朵耗子：996不是福气，努力也未必成功](1904-zuo_er_duo_hao_zi_996_bu_shi_fu_qi_nu_li_ye_wei_bi_cheng_gong)
 + [谷歌、阿里等10大深度学习CTR模型最全演化图谱](1904-gu_ge_a_li_deng_10_da_shen_du_xue_xi_ctr_mo_xing_zui_quan_yan_hua_tu_pu)
