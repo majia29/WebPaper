@@ -10,12 +10,20 @@ import codecs
 import inspect
 import os
 import re
+import requests
 import string
+import time
 import traceback
 from urlparse import urlsplit
 
-import requests
 from PIL import Image
+from selenium.common.exceptions import TimeoutException as WebTimeoutException
+from selenium.webdriver.common.by import By as WebBy
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as WebEC
+
+from pinyin import Pinyin
+from util import *
 
 __all__ = [ 
     "load_paper",
@@ -25,13 +33,64 @@ __all__ = [
 
 class Paper():
     """ 一个空的网络文章类，作为各个具体网站文章的抽象根类
-    主要用于加载时，根据具体页面，抽取相关内容。
+    具体各个网站文章内容的抽取，由各个具体文章类实现。
     """
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
-    def open(self):
-        pass
+    def __init__(self, url, driver=None):
+        """ InfoQ文章类初始化
+        """
+        # 标准类变量
+        self._class_name = self.__class__.__name__
+        # 输入参数检查
+        self.check_url(url, site=self._website, path=self._paperpath)
+        # 创建内部对象
+        self._driver = driver or init_webdriver("chrome", "drivers/chromedriver")
+        self.open(url)
+
+    def __enter__(self):
+        return self._driver
+
+    def __exit__(self, type, value, trace):
+        if self._driver:
+            self._driver.quit()
+
+    @property
+    def url(self):
+        return self._driver.current_url
+
+    @property
+    def html_source(self):
+        return self._driver.page_source
+
+    def open(self, url):
+        """ 读取文章，并生成文章对象属性
+        """
+        self.check_url(url, self._website, self._paperpath)
+        self._driver.get(url)
+        wait_time = 10
+        # patch: 等待页面加载完成
+        try:
+            WebDriverWait(self._driver, wait_time).until(WebEC.presence_of_element_located((WebBy.TAG_NAME, "img")))
+        except WebTimeoutException:
+            traceback.print_exc()
+            raise
+        #over_time = time.time() + wait_time
+        #while time.time()<over_time:
+        #    page_state = self._driver.execute_script("return document.readyState;")
+        #    print("page_state:",page_state)
+        #    if page_state=="complete":
+        #        break
+        #    time.sleep(2)
+        #if page_state!="complete":
+        #    raise WebTimeoutException
+        pinyin = Pinyin()
+        self.title = self._get_title()
+        self.title_full = pinyin.pinyin(self.title)
+        self.title_abbr = pinyin.pinyin(self.title, initial=True)
+        self.publish_info = self._get_publish_info()
+        self.publish_date = self._get_publish_date()
+        self.markdown     = self._gen_markdown()
 
     def save(self, options=None):
         default_options = {
@@ -50,9 +109,46 @@ class Paper():
         if options["format"]=="markdown":
             self._save_as_md(options)
 
-    @abc.abstractproperty
     def close(self):
+        self.__exit__()
+
+    @staticmethod
+    def check_url(url, site, path):
+        """ 检查url是否特定网站文章url
+        """
+        # 如果url不带协议头://，则补上缺省协议http://
+        site = site or ""
+        path = path or "/"
+        if url.find("://")==-1:
+            url = "http://{}".format(url)
+        urls = urlsplit(url)
+        assert urls.netloc==site and os.path.dirname(urls.path)==path
+
+    @abc.abstractproperty
+    def _get_title(self):
         pass
+
+    @abc.abstractproperty
+    def _get_publish_info(self):
+        pass
+
+    @abc.abstractproperty
+    def _get_publish_date(self):
+        pass
+
+    @abc.abstractproperty
+    def _gen_markdown(self):
+        pass
+
+    def _gen_summary(self):
+        """ 生成文章摘要
+        """
+        return "-摘要功能未实现-"
+
+    def _gen_tags(self):
+        """ 生成文章标签列表
+        """
+        return ["-标签功能未实现-"]
 
     def _save_as_md(self, options):
         # 
@@ -125,11 +221,10 @@ class Paper():
                 "refcnt": 1,
             }
             # 下载图片
-            # ref: https://github.com/python-pillow/Pillow/pull/1151 @mjpieters
             chrome_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36"
             headers = {"user-agent": chrome_agent}
             resp = requests.get(image_url, headers=headers, stream=True)
-            resp.raw.decode_content = True
+            resp.raw.decode_content = True  # ref: https://github.com/python-pillow/Pillow/pull/1151 @mjpieters
             try:
                 im = Image.open(resp.raw)
             except Exception as exc:
@@ -212,16 +307,9 @@ class Paper():
 def load_paper(*argv, **kwargs):
     """ 动态加载游戏具体网站文章类库，并返回带参数的网站文章类实例
     """
-    #解析url参数，获取网站地址
+    #解析url参数
     url = kwargs.get("url", argv[0] if argv else None)
-    if url:
-        if url.find("://")==-1:
-            url = "http://{}".format(url)
-        urls = urlsplit(url)
-        # patch
-        paperlib = urls.netloc.replace(".","_")  # 网站地址即为文章类库名（点字符转下划线）
-    else:
-        raise RuntimeError("missing url")
+    paperlib = _url2libname(url)
     # 动态加载
     module = __import__(paperlib)
     for member in inspect.getmembers(module):
@@ -231,4 +319,18 @@ def load_paper(*argv, **kwargs):
             # 带参数实例化
             return instance(*argv, **kwargs)
     raise RuntimeError("paper class #{} is not found.".format(paperlib))
+
+
+def _url2libname(url=None):
+    """ 将url转库名
+    网站地址即为文章类库名（python class使用点字符表达层次，对应存储为多级目录）
+    为了避免目录结构复杂，不做多级目录，将点字符转下划线
+    """
+    if url:
+        if url.find("://")==-1:
+            url = "http://{}".format(url)
+        urls = urlsplit(url)
+        return urls.netloc.replace(".","_")
+    else:
+        raise RuntimeError("missing url")
 

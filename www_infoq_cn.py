@@ -17,8 +17,9 @@ __all__ = [
 
 
 class InfoQPaper(Paper):
-    _website = "www.infoq.cn"
-    _sitename = "InfoQ中文网"
+    _website   = "www.infoq.cn"
+    _paperpath = "/article"
+    _sitename  = "InfoQ中文网"
 
     def __init__(self, url, driver=None):
         """ InfoQ文章类初始化
@@ -26,7 +27,7 @@ class InfoQPaper(Paper):
         # 标准类变量
         self._class_name = self.__class__.__name__
         # 输入参数检查
-        check_url(url, InfoQPaper._website)
+        self.check_url(url, site=self._website, path=self._paperpath)
         # 创建内部对象
         self._driver = driver or init_webdriver("chrome", "drivers/chromedriver")
         self.open(url)
@@ -34,9 +35,9 @@ class InfoQPaper(Paper):
     def __enter__(self):
         return self._driver
 
-    #def __exit__(self, type, value, trace):
-    #    if self._driver:
-    #        self._driver.quit()
+    def __exit__(self, type, value, trace):
+        if self._driver:
+            self._driver.quit()
 
     @property
     def url(self):
@@ -148,7 +149,7 @@ class InfoQPaper(Paper):
     def open(self, url):
         """ 读取文章，并生成文章对象属性
         """
-        check_url(url, InfoQPaper._website)
+        self.check_url(url, self._website, self._paperpath)
         self._driver.get(url)
         # patch: 等待页面真正加载完成
         sleep(3)

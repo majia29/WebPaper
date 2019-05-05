@@ -4,119 +4,11 @@
 from pinyin import Pinyin
 
 __all__ = [
-    "load_paper",
     "MpPaper",
 ]
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
-
-
-def _init_webdriver(driverclass, driverpath=None):
-    """ 初始化Selenium WebDriver
-    """
-    chrome_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36"
-    safari_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15"
-    firefox_agent= "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:60.0) Gecko/20100101 Firefox/60.0"
-    if driverclass.lower()=="chrome":
-        chrome_path = driverpath
-        # chrome config
-        chrome_options = WebDriver.chrome.options.Options()
-        chrome_options.add_argument("--lang=zh_CN.UTF-8")
-        chrome_options.add_argument("--user-agent={}".format(chrome_agent))
-        #chrome_options.add_argument('--allow-running-insecure-content')
-        #chrome_options.add_argument('--disable-dev-shm-usage')
-        #chrome_options.add_argument('--disable-extensions')
-        #chrome_options.add_argument('--disable-gpu')
-        #chrome_options.add_argument('disable-infobars')
-        #chrome_options.add_argument('--disable-web-security')
-        chrome_options.add_argument("--mute-audio")
-        #chrome_options.add_argument('--no-referrers')
-        #chrome_options.add_argument('--no-sandbox')
-        #chrome_options.add_argument("--start-maximized")
-        #chrome_options.add_argument("--headless")
-        # 以下参数用于配置站点允许运行Flash，仅适用老版本Chrome 69
-        chrome_options.add_argument("--disable-features=EnableEphemeralFlashPermission")
-        chrome_prefs = {
-            "profile.managed_default_content_settings.images": 1,
-            "profile.managed_default_content_settings.plugins": 0,
-        }
-        chrome_options.add_experimental_option("prefs", chrome_prefs)
-        # webdriver instance
-        if chrome_path:
-            driver = WebDriver.Chrome(executable_path=chrome_path, chrome_options=chrome_options)
-        else:
-            driver = WebDriver.Chrome(chrome_options=chrome_options)
-    elif driverclass.lower()=="firefox":
-        firefox_path = driverpath
-        firefox_options = WebDriver.FirefoxOptions()
-        firefox_options.set_preference("media.volume_scale", "0.0");
-        firefox_options.set_preference("dom.ipc.plugins.enabled.libflashplayer.so", "true")
-        firefox_options.set_preference("plugin.state.flash", 2)
-        if firefox_path:
-            driver = WebDriver.Firefox(executable_path=firefox_path, firefox_options=firefox_options)
-        else:
-            driver = WebDriver.Firefox(firefox_options=firefox_options)
-    else:
-        raise BrowserError("Unsupported DriverClass. {}".format(driverclass))
-    #driver.implicitly_wait(3)
-    return driver
-
-
-def _text2date(desctext, fmt=None):
-    """ 将日期描述文本转换为具体日期
-    """
-    fmt = fmt or "%Y%m%d"
-    if desctext=="今天":
-        text = datetime.today().strftime(fmt)
-    elif desctext=="昨天":
-        text = (datetime.today() - timedelta(days=1)).strftime(fmt)
-    elif desctext=="前天":
-        text = (datetime.today() - timedelta(days=2)).strftime(fmt)
-    elif desctext.endswith("天前"):
-        delta = int(desctext[ :desctext.index("天前") ])
-        text = (datetime.today() - timedelta(days=delta)).strftime(fmt)
-    elif desctext.endswith("周前"):
-        delta = int(desctext[ :desctext.index("周前") ]) * 7
-        text = (datetime.today() - timedelta(days=delta)).strftime(fmt)
-    elif desctext.find("年")>0 and desctext.find("月")>0 and desctext.find("日")>0:
-        y = int(desctext[ :desctext.index("年") ])
-        m = int(desctext[ desctext.index("年")+1:desctext.index("月") ])
-        d = int(desctext[ desctext.index("月")+1:desctext.index("日") ])
-        text = datetime(y, m, d).strftime(fmt)
-    elif desctext.find("月")>0 and desctext.find("日")>0:
-        y = datetime.today().year
-        m = int(desctext[ :desctext.index("月") ])
-        d = int(desctext[ desctext.index("月")+1:desctext.index("日") ])
-        text = datetime(y, m, d).strftime(fmt)
-    else:
-        text = desctext
-    return text
-
-
-def _pretty_markdown(mdtext):
-    """ 将markdown文本格式化
-    """
-    return mdtext
-
-
-def load_paper(*args, **kwargs):
-    """ 网络文章类实例化
-    用于扩展支持多个网站文章
-    """
-    url = kwargs.get("url", args[0] if args else None)
-    if url:
-        if url.find("://")==-1:
-            url = "http://{}".format(url)
-        urls = urlsplit(url)
-        if urls.netloc=="mp.weixin.qq.com":
-            return MPPaper(*args, **kwargs)
-        elif urls.netloc=="mp.weixin.qq.com":
-            return MPPaper(*args, **kwargs)
-        else:
-            raise RuntimeError("unsupported site. {}".format(urls.netloc))
-    else:
-        raise RuntimeError("missing url")
 
 
 class MPPaper:
@@ -237,7 +129,7 @@ class MPPaper:
             # <div class="rich_media_content " id="js_content">
             rich_media_content = page_content.find_element_by_class_name("rich_media_content")
             rich_media_content_text = ht.handle(rich_media_content.get_attribute('innerHTML'))
-            md_text = _pretty_markdown(rich_media_content_text)
+            md_text = pretty_markdown(rich_media_content_text)
         except:
             traceback.print_exc()
             pass

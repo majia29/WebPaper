@@ -7,14 +7,12 @@ from __future__ import unicode_literals
 
 import re
 from datetime import datetime, timedelta
-from urlparse import urlsplit
 
 from html2text import HTML2Text
 from selenium import webdriver as WebDriver
 
 __all__ = [
     "today",
-    "check_url",
     "init_webdriver",
     "text2date",
     "html2markdown",
@@ -25,16 +23,6 @@ __all__ = [
 def today(fmt=None):
     fmt = fmt or "%Y%m%d"
     return datetime.today().strftime(fmt)
-
-
-def check_url(url, site):
-    """ 检查url是否特定网站文章url
-    """
-    # 如果url不带协议头://，则补上缺省协议http://
-    if url.find("://")==-1:
-        url = "http://{}".format(url)
-    urls = urlsplit(url)
-    assert urls.netloc==site
 
 
 def init_webdriver(driverclass, driverpath=None):
@@ -113,6 +101,16 @@ def text2date(desctext, fmt=None):
         y = datetime.today().year
         m = int(desctext[ :desctext.index("月") ])
         d = int(desctext[ desctext.index("月")+1:desctext.index("日") ])
+        text = datetime(y, m, d).strftime(fmt)
+    elif len(desctext.split("-"))==3:
+        y = int(desctext.split("-")[0])
+        m = int(desctext.split("-")[1])
+        d = int(desctext.split("-")[2])
+        text = datetime(y, m, d).strftime(fmt)
+    elif len(desctext.split("/"))==3:
+        y = int(desctext.split("/")[0])
+        m = int(desctext.split("/")[1])
+        d = int(desctext.split("/")[2])
         text = datetime(y, m, d).strftime(fmt)
     else:
         text = desctext
