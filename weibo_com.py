@@ -95,6 +95,6 @@ class WeiboPaper(Paper):
         wb_editor_iframe_new = wb_artical.find_element_by_class_name("WB_editor_iframe_new")
         wb_editor_iframe_new_text = wb_editor_iframe_new.get_attribute('innerHTML')
         html_text = main_toppic_text + wb_editor_iframe_new_text
-        md_text = html2markdown(html_text)
+        md_text = html2markdown(html_text, ext="pretty")
         return md_text
 

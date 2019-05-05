@@ -117,9 +117,10 @@ def text2date(desctext, fmt=None):
     return text
 
 
-def html2markdown(html):
+def html2markdown(html, ext=None):
     # 初始化
     # 更多参数见 https://github.com/Alir3z4/html2text/blob/master/html2text/cli.py
+    ext = ext or ""
     ht = HTML2Text()
     ht.ignore_links = False
     ht.escape_all = True
@@ -133,8 +134,10 @@ def html2markdown(html):
     ht.skip_internal_links = True
     # 转换
     text = ht.handle(html)
-    #print("[debug] source markdown:", text)
-    return _pretty_markdown(text)
+    # 额外操作
+    if ext=="pretty":
+        text = _pretty_markdown(text)
+    return text
 
 
 def _pretty_markdown(mdtext):
@@ -181,11 +184,11 @@ def _pretty_markdown(mdtext):
     return "\n".join(text)
 
 
-def convert_image(im, fmt=None):
-    fmt = fmt or "png"
-    src_fmt = im.format.lower()
-    if src_fmt==fmt.lower():
-        return im
-    if src_fmt=="png" and (fmt=="jpg" or fmt=="jpeg"):
-        return im.convert('RGB')
-    return im
+def convert_image(img, fmt=None):
+    fmt = (fmt or "jpeg").lower()
+    src_fmt = img.format.lower()
+    if fmt==src_fmt:
+        return img
+    elif fmt=="jpg" or fmt=="jpeg":
+        return img.convert("RGB")
+    return img

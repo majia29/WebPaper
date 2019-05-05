@@ -19,6 +19,7 @@ from urlparse import urlsplit
 from PIL import Image
 from selenium.common.exceptions import TimeoutException as WebTimeoutException
 from selenium.webdriver.common.by import By as WebBy
+from selenium.webdriver.common.keys import Keys as WebKeys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as WebEC
 
@@ -32,11 +33,9 @@ __all__ = [
 
 
 class Paper():
-    """ 一个空的网络文章类，作为各个具体网站文章的抽象根类
+    """ 一个空的网络文章类，作为各个具体网站文章的根类
     具体各个网站文章内容的抽取，由各个具体文章类实现。
     """
-    __metaclass__ = abc.ABCMeta
-
     def __init__(self, url, driver=None):
         """ InfoQ文章类初始化
         """
@@ -50,6 +49,17 @@ class Paper():
 
     def __enter__(self):
         return self._driver
+
+    def __str__(self):
+        cls_str = ""
+        cls_str += "class: {}\n".format(self._class_name)
+        cls_str += "title: {}\n".format(self.title)
+        cls_str += "publish_info:\n"
+        for line in self.publish_info:
+            cls_str += "{}\n".format(line)
+        cls_str += "publish_date: {}\n".format(self.publish_date)
+        cls_str += "markdown:\n{}\n".format(self.markdown)
+        return cls_str
 
     def __exit__(self, type, value, trace):
         if self._driver:
@@ -75,15 +85,12 @@ class Paper():
         except WebTimeoutException:
             traceback.print_exc()
             raise
-        #over_time = time.time() + wait_time
-        #while time.time()<over_time:
-        #    page_state = self._driver.execute_script("return document.readyState;")
-        #    print("page_state:",page_state)
-        #    if page_state=="complete":
-        #        break
-        #    time.sleep(2)
-        #if page_state!="complete":
-        #    raise WebTimeoutException
+        # patch: 处理图片lazy-loading
+        image_elements = self._driver.find_elements_by_tag_name("img")
+        for image_element in image_elements:
+            self._driver.execute_script('return arguments[0].scrollIntoView(true);', image_element)
+            time.sleep(2)
+        # 抽取文章信息
         pinyin = Pinyin()
         self.title = self._get_title()
         self.title_full = pinyin.pinyin(self.title)
@@ -97,7 +104,7 @@ class Paper():
             "format"       : "markdown",
             "include_index": "true",
             "include_image": "true",
-            "image_format" : "png",
+            "image_format" : "jpeg",
             "doc_name_format"  : "${yymm}-${title_full}",
             "image_name_format": "${yymm}-${title_abbr}-${image_sn}",
             "root_dir"     : ".",        # web根目录
@@ -124,20 +131,24 @@ class Paper():
         urls = urlsplit(url)
         assert urls.netloc==site and os.path.dirname(urls.path)==path
 
-    @abc.abstractproperty
     def _get_title(self):
+        """ 抽取文章标题
+        """
         pass
 
-    @abc.abstractproperty
     def _get_publish_info(self):
+        """ 抽取文章发布信息
+        """
         pass
 
-    @abc.abstractproperty
     def _get_publish_date(self):
+        """ 抽取文章发布日期
+        """
         pass
 
-    @abc.abstractproperty
     def _gen_markdown(self):
+        """ 抽取文章正文，并转为markdown
+        """
         pass
 
     def _gen_summary(self):
@@ -223,22 +234,28 @@ class Paper():
             # 下载图片
             chrome_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36"
             headers = {"user-agent": chrome_agent}
-            resp = requests.get(image_url, headers=headers, stream=True)
+            try:
+                resp = requests.get(image_url, headers=headers, stream=True)
+            except:
+                traceback.print_exc()
+                continue
             resp.raw.decode_content = True  # ref: https://github.com/python-pillow/Pillow/pull/1151 @mjpieters
             try:
-                im = Image.open(resp.raw)
+                img = Image.open(resp.raw)
             except Exception as exc:
                 if not resp.ok:
                     resp.raise_for_status()
                 traceback.print_exc()
-                im = None
+                continue
             # 下载成功，进一步处理
-            if im:
+            if img:
                 image_name_info["image_sn"] = image_sn
                 image_name  = image_name_formater(image_name_info)
-                image_format = im.format.lower()
+                #image_format = img.format.lower()
+                img = convert_image(img, fmt=options["image_format"])
+                image_format = options["image_format"]
                 image_file = os.path.join(image_dir, "{}.{}".format(image_name, image_format))
-                im.save(image_file)
+                img.save(image_file, image_format)
                 image_result[image_url]["path"] = os.path.join(options["image_path"], "{}.{}".format(image_name, image_format))
                 image_result[image_url]["format"] = image_format
                 # 替换原文中的web地址为本地站点相对地址
@@ -307,30 +324,24 @@ class Paper():
 def load_paper(*argv, **kwargs):
     """ 动态加载游戏具体网站文章类库，并返回带参数的网站文章类实例
     """
-    #解析url参数
+    # 解析url参数
     url = kwargs.get("url", argv[0] if argv else None)
-    paperlib = _url2libname(url)
-    # 动态加载
-    module = __import__(paperlib)
-    for member in inspect.getmembers(module):
-        # 判断该成员是否为一个网站文章类，排除游戏抽象根类
-        instance = member[1]
-        if issubclass(instance, Paper) and not inspect.isabstract(instance):
-            # 带参数实例化
-            return instance(*argv, **kwargs)
-    raise RuntimeError("paper class #{} is not found.".format(paperlib))
-
-
-def _url2libname(url=None):
-    """ 将url转库名
-    网站地址即为文章类库名（python class使用点字符表达层次，对应存储为多级目录）
-    为了避免目录结构复杂，不做多级目录，将点字符转下划线
-    """
+    # 将url转库名。网站地址即为文章类库名
+    # 为了避免目录结构复杂，不做多级目录，将点字符转下划线
     if url:
         if url.find("://")==-1:
             url = "http://{}".format(url)
         urls = urlsplit(url)
-        return urls.netloc.replace(".","_")
+        paperlib = urls.netloc.replace(".","_")
     else:
         raise RuntimeError("missing url")
+    # 动态加载
+    module = __import__(paperlib)
+    for member in inspect.getmembers(module):
+        # 判断该成员是否为一个网站文章类，排除根类
+        instance_name, instance_class = member[0], member[1]
+        if issubclass(instance_class, Paper) and instance_name!="Paper":
+            # 带参数实例化
+            return instance_class(*argv, **kwargs)
+    raise RuntimeError("paper class #{} is not found.".format(paperlib))
 

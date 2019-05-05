@@ -51,7 +51,6 @@ def main(*argv, **kwargs):
         "include_image": "true",
     }
     page.save(options=save_opts)
-    #time.sleep(3600)
     return 0
 
 

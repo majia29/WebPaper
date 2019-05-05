@@ -5,10 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from time import sleep
-
 from paper import Paper
-from pinyin import Pinyin
 from util import *
 
 __all__ = [
@@ -20,32 +17,6 @@ class InfoQPaper(Paper):
     _website   = "www.infoq.cn"
     _paperpath = "/article"
     _sitename  = "InfoQ中文网"
-
-    def __init__(self, url, driver=None):
-        """ InfoQ文章类初始化
-        """
-        # 标准类变量
-        self._class_name = self.__class__.__name__
-        # 输入参数检查
-        self.check_url(url, site=self._website, path=self._paperpath)
-        # 创建内部对象
-        self._driver = driver or init_webdriver("chrome", "drivers/chromedriver")
-        self.open(url)
-
-    def __enter__(self):
-        return self._driver
-
-    def __exit__(self, type, value, trace):
-        if self._driver:
-            self._driver.quit()
-
-    @property
-    def url(self):
-        return self._driver.current_url
-
-    @property
-    def html_source(self):
-        return self._driver.page_source
 
     def _get_title(self):
         """ 抽取文章标题
@@ -133,33 +104,6 @@ class InfoQPaper(Paper):
         article_content = article_main.find_element_by_class_name("article-content")
         article_content_text = article_content.get_attribute('innerHTML')
         html_text = article_cover_text + article_content_text
-        md_text = html2markdown(html_text)
+        md_text = html2markdown(html_text, ext="pretty")
         return md_text
 
-    def _gen_summary(self):
-        """ 生成文章摘要
-        """
-        return "-摘要功能未实现-"
-
-    def _gen_tags(self):
-        """ 生成文章标签列表
-        """
-        return ["-标签功能未实现-"]
-
-    def open(self, url):
-        """ 读取文章，并生成文章对象属性
-        """
-        self.check_url(url, self._website, self._paperpath)
-        self._driver.get(url)
-        # patch: 等待页面真正加载完成
-        sleep(3)
-        pinyin = Pinyin()
-        self.title = self._get_title()
-        self.title_full = pinyin.pinyin(self.title)
-        self.title_abbr = pinyin.pinyin(self.title, initial=True)
-        self.publish_info = self._get_publish_info()
-        self.publish_date = self._get_publish_date()
-        self.markdown     = self._gen_markdown()
-
-    def close(self):
-        self.__exit__()

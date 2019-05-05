@@ -1,6 +1,7 @@
 
 **[2019-05]**
 
++ [PyTorch大更新！谷歌出手帮助开发，正式支持TensorBoard | 附5大开源项目](1905-pytorch_da_geng_xin_gu_ge_chu_shou_bang_zhu_kai_fa_zheng_shi_zhi_chi_tensorboard_fu_5_da_kai_yuan_xiang_mu)
 + [数理史上的绝妙证明：准晶是高维晶体的投影](1905-shu_li_shi_shang_de_jue_miao_zheng_ming_zhun_jing_shi_gao_wei_jing_ti_de_tou_ying)
 
 **[2019-04]**
