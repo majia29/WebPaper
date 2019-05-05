@@ -1,8 +1,8 @@
-# mp2html
+# WebPaper
 
-将微信公众号文章转换为标准html页面。微信公众号发布出来的文章地址很不人性，而且其中的图片使用webp，很多网页摘取工具不支持。我的目标:  
+将微信公众号/微博/infoq等文章转换为标准html页面。主要是因为微信公众号/微博/infoq等发布出来的文章地址很不人性，而且其中的图片有的使用webp，很多网页摘取工具不支持。我的目标:  
 
-1. 传入一个公众号文章地址，输出一个符合通常的web logger页面命名规范的html页面，并将其中的图片格式转换为png。
+1. 传入一个微信公众号/微博/infoq等文章地址，输出一个符合通常的web logger页面命名规范的html页面，并将其中的图片格式转换为png/jpeg等常见格式。
 2. 页面上传到github.io，直接做为一个internet web页面供正常的浏览查看以及网摘。
 
 **v0.1更新内容**
@@ -22,14 +22,14 @@
 如果只做页面爬取，附带图片下载，则只需要命令行执行`python`脚本即可:
 
 ``` sh
-python mp2html.py https://www.infoq.cn/article/oZCcFAC7J4-01yFTG5r3
+python webpaper.py https://www.infoq.cn/article/oZCcFAC7J4-01yFTG5r3
 ```
 
 如果也想发布到github.io，则需要做以下简单步骤即可:
 
 1. clone repo;
 2. repo setting "GitHub Pages" enable, "Pages Source" select "docs";
-3. run mp2html.py <url>
+3. run webpaper.py <url>
 4. git commit/push
 
 ok.
