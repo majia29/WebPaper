@@ -20,7 +20,6 @@ reload(sys)
 sys.setdefaultencoding("utf-8")
 
 
-
 def main(*argv, **kwargs):
     """
     main()
@@ -30,12 +29,13 @@ def main(*argv, **kwargs):
     # 解析命令行参数
     args = list(*argv)[1:]
     if len(args)!=1:
-        print("usage: mp2html.py <url>")
+        print("usage: webpaper.py <url>")
         return -1
 
     url = args[0]
 
     # todo: 通过配置文件，或者`git config --local --list`获取git配置信息
+    # 自动提交github
     git_conf = {
         "repository": "git@github.com:majia29/mp2html.git",
         "user.name" : "majia29",
