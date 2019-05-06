@@ -37,19 +37,20 @@ def main(*argv, **kwargs):
     # todo: 通过配置文件，或者`git config --local --list`获取git配置信息
     # 自动提交github
     git_conf = {
-        "repository": "git@github.com:majia29/mp2html.git",
+        "repository": "git@github.com:majia29/webdigg.git",
         "user.name" : "majia29",
         "user.email": "majia29@gmail.com",
-        "local_root": ".",
+        "local"     : "../webdigg",  # web页面存放地址
     }
 
     # 开始执行
     page = load_paper(url=url)
     save_opts = {
-        "root_dir"  : "./docs",   # 本处的web发布地址(根目录)是在代码路径下的docs目录
         "include_index": "true",
         "include_image": "true",
     }
+    if git_conf.get("local"):
+        save_opts["root_dir"] = git_conf.get("local")
     page.save(options=save_opts)
     return 0
 

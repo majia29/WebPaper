@@ -101,13 +101,13 @@ class Paper():
 
     def save(self, options=None):
         default_options = {
-            "format"       : "markdown",
-            "include_index": "true",
-            "include_image": "true",
-            "image_format" : "jpeg",
+            "format"       : "markdown",  # 保存格式 markdown/html
+            "include_index": "true",  # 是否更新索引文件
+            "include_image": "true",  # 是否下载图像文件
+            "image_format" : "jpeg",  # 将webp图像转换存储格式
             "doc_name_format"  : "${yymm}-${title_full}",
             "image_name_format": "${yymm}-${title_abbr}-${image_sn}",
-            "root_dir"     : ".",        # web根目录
+            "root_dir"     : "./docs",   # web根目录
             "doc_path"     : "",         # doc目录的Web相对路径
             "image_path"   : "images",   # image目录的Web相对路径
         }
@@ -232,14 +232,16 @@ class Paper():
                 "refcnt": 1,
             }
             # 下载图片
+            headers = requests.utils.default_headers()
             chrome_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36"
-            headers = {"user-agent": chrome_agent}
+            headers.update( { "Host": self._website, "Referer": self.url, "User-Agent": chrome_agent, } )
             try:
                 resp = requests.get(image_url, headers=headers, stream=True)
             except:
                 traceback.print_exc()
                 continue
-            resp.raw.decode_content = True  # ref: https://github.com/python-pillow/Pillow/pull/1151 @mjpieters
+            # patch: https://github.com/python-pillow/Pillow/pull/1151 @mjpieters
+            resp.raw.decode_content = True
             try:
                 img = Image.open(resp.raw)
             except Exception as exc:
@@ -251,9 +253,11 @@ class Paper():
             if img:
                 image_name_info["image_sn"] = image_sn
                 image_name  = image_name_formater(image_name_info)
-                #image_format = img.format.lower()
-                img = convert_image(img, fmt=options["image_format"])
-                image_format = options["image_format"]
+                image_format = img.format.lower()
+                # 如果是webp格式，则进行格式转换
+                if image_format=="webp":
+                    image_format = options["image_format"]
+                    img = convert_image(img, fmt=image_format)
                 image_file = os.path.join(image_dir, "{}.{}".format(image_name, image_format))
                 img.save(image_file, image_format)
                 image_result[image_url]["path"] = os.path.join(options["image_path"], "{}.{}".format(image_name, image_format))
@@ -280,7 +284,7 @@ class Paper():
         # 生成要处理的索引相关信息
         index_file = os.path.join(doc_dir, "index.md")
         index_section = "**[{}-{}]**".format(self.publish_date[0:4], self.publish_date[4:6])
-        index_line = "+ [{}]({})".format(self.title, doc_name)
+        index_line = "+ [{}]({}) <sub>[\[{}\]]({})</sub>".format(self.title, doc_name, self._sitename, self.url)
         # 变量初始化
         content = []
         exists_index_section = False

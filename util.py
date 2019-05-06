@@ -192,6 +192,9 @@ def convert_image(img, fmt=None):
     src_fmt = img.format.lower()
     if fmt==src_fmt:
         return img
-    elif fmt=="jpg" or fmt=="jpeg":
+    elif fmt=="webp":
+        return img.convert("RGBX")
+    elif fmt in ["png", "jpg", "jpeg"]:
         return img.convert("RGB")
     return img
+
