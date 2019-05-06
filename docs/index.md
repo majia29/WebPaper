@@ -6,6 +6,7 @@
 
 **[2019-04]**
 
++ [上海久耶基于HBase实时数仓探索实践](1904-shang_hai_jiu_ye_ji_yu_hbase_shi_shi_shu_cang_tan_suo_shi_jian)
 + [如何从零开始搭建 CI/CD 流水线](1904-ru_he_cong_ling_kai_shi_da_jian_ci_cd_liu_shui_xian)
 + [AutoML：机器学习的下一波浪潮](1904-automl_ji_qi_xue_xi_de_xia_yi_bo_lang_chao)
 + [这一天还是来了：亚马逊利用AI监控员工工作效率，并生成解雇指令](1904-zhe_yi_tian_huan_shi_lai_le_ya_ma_xun_li_yong_ai_jian_kong_yuan_gong_gong_zuo_xiao_lv_bing_sheng_cheng_jie_gu_zhi_ling)
