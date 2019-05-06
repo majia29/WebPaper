@@ -94,97 +94,26 @@
 当时 datanode 的内存配置是 8G，实际只使用 1G，这个时候就要加上三个参数:
 
 复制代码
-[code]
-<table>
-<tr>
-<td>
 
-</td>
-<td>
-
+```
 echo "kernel.threads-max=196605" >> /etc/sysctl.conf
-
-</td></tr>
-<tr>
-<td>
-
-</td>
-<td>
 
 echo "kernel.pid_max=196605" >> /etc/sysctl.conf
 
-</td></tr>
-<tr>
-<td>
-
-</td>
-<td>
-
 echo "vm.max_map_count=393210" >> /etc/sysctl.conf
-
-</td></tr>
-<tr>
-<td>
-
-</td>
-<td>
 
 sysctl -p
 
-</td></tr>
-<tr>
-<td>
-
-</td>
-<td>
-
-</td></tr>
-<tr>
-<td>
-
-</td>
-<td>
-
 vi /etc/security/limits.conf
-
-</td></tr>
-<tr>
-<td>
-
-</td>
-<td>
 
 * soft nofile 196605
 
-</td></tr>
-<tr>
-<td>
-
-</td>
-<td>
-
 * hard nofile 196605
-
-</td></tr>
-<tr>
-<td>
-
-</td>
-<td>
 
 * soft nproc 196605
 
-</td></tr>
-<tr>
-<td>
-
-</td>
-<td>
-
 * hard nproc 196605
-
-</td></tr></table>
-[/code]
+```
 
 这其实是底层 Linux 抛出的错误。
 提醒一点 socket.timeout 参数不仅在 HDFS 中需要配置，在 HBase 中也需要配置。

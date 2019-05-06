@@ -71,7 +71,7 @@ def init_webdriver(driverclass, driverpath=None):
         else:
             driver = WebDriver.Firefox(firefox_options=firefox_options)
     else:
-        raise BrowserError("Unsupported DriverClass. {}".format(driverclass))
+        raise RuntimeError("Unsupported DriverClass. {}".format(driverclass))
     #driver.implicitly_wait(3)
     return driver
 
@@ -130,6 +130,7 @@ def html2markdown(html, ext=None):
     ht.body_width = 0  # patch: 避免无谓的分行
     ht.escape_snob = True
     ht.bypass_tables = True
+    ht.ignore_tables = True
     ht.single_line_break = False
     ht.skip_internal_links = True
     # 转换
@@ -146,7 +147,8 @@ def _pretty_markdown(mdtext):
     1. 多个空行合并为1个
     2. header行的最高级数限制为3级（文章标题为2级header）
     3. image格式规整
-    4. todo: 数值型列表转化为非列表形式（由于在数值型列表项之间插入其他内容，导致其后的列表项从1开始重新计数，列表项之间断裂）
+    4. [code] 转为```
+    5. todo: 数值型列表转化为非列表形式（由于在数值型列表项之间插入其他内容，导致其后的列表项从1开始重新计数，列表项之间断裂）
     """
     text = []
     blank_line = False
@@ -180,6 +182,7 @@ def _pretty_markdown(mdtext):
             if image_info.groups()[2]!="":
                 text.append(image_info.groups()[2])
             continue
+        line = line.replace("[code]","\n```").replace("[/code]","```")
         text.append(line)
     return "\n".join(text)
 
