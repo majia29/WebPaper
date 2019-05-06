@@ -284,7 +284,8 @@ class Paper():
         # 生成要处理的索引相关信息
         index_file = os.path.join(doc_dir, "index.md")
         index_section = "**[{}-{}]**".format(self.publish_date[0:4], self.publish_date[4:6])
-        index_line = "+ [{}]({}) <sub>[\[{}\]]({})</sub>".format(self.title, doc_name, self._sitename, self.url)
+        # fixed: github index.md show url(include table symbol) error
+        index_line = "+ [{}]({}) <sub>[\[{}\]]({})</sub>".format(self.title.replace("|",""), doc_name, self._sitename, self.url)
         # 变量初始化
         content = []
         exists_index_section = False
