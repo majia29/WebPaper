@@ -4,8 +4,10 @@
 *.pyc
 *.log
 
+temp*
+
 drivers/*
 
-temp*
+*.conf
 passwd.db
 

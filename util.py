@@ -37,13 +37,14 @@ def init_webdriver(driverclass, driverpath=None):
         chrome_options = WebDriver.chrome.options.Options()
         chrome_options.add_argument("--lang=zh_CN.UTF-8")
         chrome_options.add_argument("--user-agent={}".format(chrome_agent))
+        chrome_options.add_argument("--mute-audio")
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("–-disable-geolocation")
         #chrome_options.add_argument('--allow-running-insecure-content')
         #chrome_options.add_argument('--disable-dev-shm-usage')
-        #chrome_options.add_argument('--disable-extensions')
         #chrome_options.add_argument('--disable-gpu')
-        #chrome_options.add_argument('disable-infobars')
+        #chrome_options.add_argument('--disable-infobars')
         #chrome_options.add_argument('--disable-web-security')
-        chrome_options.add_argument("--mute-audio")
         #chrome_options.add_argument('--no-referrers')
         #chrome_options.add_argument('--no-sandbox')
         #chrome_options.add_argument("--start-maximized")
@@ -51,8 +52,10 @@ def init_webdriver(driverclass, driverpath=None):
         # 以下参数用于配置站点允许运行Flash，仅适用老版本Chrome 69
         chrome_options.add_argument("--disable-features=EnableEphemeralFlashPermission")
         chrome_prefs = {
+            # 0- Default 1- Allow 2- Block
+            "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.images": 1,
-            "profile.managed_default_content_settings.plugins": 0,
+            "profile.managed_default_content_settings.plugins": 1,
         }
         chrome_options.add_experimental_option("prefs", chrome_prefs)
         # webdriver instance
