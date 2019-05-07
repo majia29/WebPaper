@@ -42,7 +42,7 @@ class Paper():
         # 标准类变量
         self._class_name = self.__class__.__name__
         # 输入参数检查
-        self.check_url(url, site=self._website, path=self._paperpath)
+        self._check_url(url, site=self._website, path=self._paperpath)
         # 创建内部对象
         self._driver = driver or init_webdriver("chrome", "drivers/chromedriver")
         self.open(url)
@@ -76,21 +76,23 @@ class Paper():
     def open(self, url):
         """ 读取文章，并生成文章对象属性
         """
-        self.check_url(url, self._website, self._paperpath)
+        self._check_url(url, self._website, self._paperpath)
         self._driver.get(url)
-        wait_time = 10
+        print("[paper] load page ...")
         # patch: 等待页面加载完成
         try:
-            WebDriverWait(self._driver, wait_time).until(WebEC.presence_of_element_located((WebBy.TAG_NAME, "img")))
+            WebDriverWait(self._driver, 10).until(WebEC.presence_of_element_located((WebBy.TAG_NAME, "img")))
         except WebTimeoutException:
             traceback.print_exc()
             raise
         # patch: 处理图片lazy-loading
+        print("[paper] load image ...")
         image_elements = self._driver.find_elements_by_tag_name("img")
         for image_element in image_elements:
             self._driver.execute_script('return arguments[0].scrollIntoView(true);', image_element)
             time.sleep(2)
         # 抽取文章信息
+        print("[paper] extract info ...")
         pinyin = Pinyin()
         self.title = self._get_title()
         self.title_full = pinyin.pinyin(self.title)
@@ -113,6 +115,7 @@ class Paper():
         }
         options = options or {}
         options = dict(default_options, **options)
+        print("[paper] save paper ...")
         if options["format"]=="markdown":
             self._save_as_md(options)
 
@@ -120,7 +123,7 @@ class Paper():
         self.__exit__()
 
     @staticmethod
-    def check_url(url, site, path):
+    def _check_url(url, site, path):
         """ 检查url是否特定网站文章url
         """
         # 如果url不带协议头://，则补上缺省协议http://
@@ -129,7 +132,8 @@ class Paper():
         if url.find("://")==-1:
             url = "http://{}".format(url)
         urls = urlsplit(url)
-        assert urls.netloc==site and os.path.dirname(urls.path)==path
+        assert urls.netloc==site
+        assert urls.path==path or os.path.dirname(urls.path)==path
 
     def _get_title(self):
         """ 抽取文章标题
@@ -232,9 +236,11 @@ class Paper():
                 "refcnt": 1,
             }
             # 下载图片
-            headers = requests.utils.default_headers()
             chrome_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36"
-            headers.update( { "Host": self._website, "Referer": self.url, "User-Agent": chrome_agent, } )
+            # 404 Client Error, if headers include Host, Referer
+            #headers = requests.utils.default_headers()
+            #headers.update( { "Host": self._website, "Referer": self.url, "User-Agent": chrome_agent, } )
+            headers = { "User-Agent": chrome_agent }
             try:
                 resp = requests.get(image_url, headers=headers, stream=True)
             except:
@@ -285,7 +291,7 @@ class Paper():
         index_file = os.path.join(doc_dir, "index.md")
         index_section = "**[{}-{}]**".format(self.publish_date[0:4], self.publish_date[4:6])
         # fixed: github index.md show url(include table symbol) error
-        index_line = "+ [{}]({}) <sub>[\[{}\]]({})</sub>".format(self.title.replace("|",""), doc_name, self._sitename, self.url)
+        index_line = "+ [{}]({}) <sub>[\[{}\]]({})</sub>".format(self.title.replace("|",""), doc_name, self._website, self.url)
         # 变量初始化
         content = []
         exists_index_section = False
