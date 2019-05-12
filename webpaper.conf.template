@@ -1,6 +1,6 @@
 
-[github]
-repository = git@github.com:majia29/webdigg.git
-user.name  = majia29
-user.email = majia29@gmail.com
-local      = ../webdigg
+[git]
+repository = git@github.com:yourname/yourrepo.git
+user.name  = yourname
+user.email = yourname@gmail.com
+local      = /user/yourname
