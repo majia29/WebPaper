@@ -1,11 +1,22 @@
 # -*- coding: utf-8 -*-
+# util.py
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+    )
 
+import codecs
+import os
 import re
+import shlex
+import subprocess
+import threading
+import time
+import traceback
+from ConfigParser import ConfigParser
 from datetime import datetime, timedelta
 
 from html2text import HTML2Text
@@ -13,6 +24,7 @@ from selenium import webdriver as WebDriver
 
 __all__ = [
     "today",
+    "shellexec",
     "init_webdriver",
     "text2date",
     "html2markdown",
@@ -23,6 +35,128 @@ __all__ = [
 def today(fmt=None):
     fmt = fmt or "%Y%m%d"
     return datetime.today().strftime(fmt)
+
+
+def shellexec(cmd, shell=None, env=None, cwd=None, raiseonerror=None, timeout=None):
+    """ Shell命令行执行
+    关于超时，可参考
+    https://stackoverflow.com/questions/1191374/using-module-subprocess-with-timeout @sussudio
+    """
+    # 缺省参数
+    shell = False if shell is None else shell
+    env   = env or os.environ
+    cwd   = cwd or None
+    raiseonerror = True if raiseonerror is None else raiseonerror
+    timeout      = int(timeout or 0)
+    # cmd转换为list
+    if isinstance(cmd, (list,)):
+        args = cmd
+    else:
+        args = shlex.split(cmd)
+    shell_opts = {
+        "args"  : args,
+        "bufsize": 20971520,  # 20M
+        "shell" : shell,
+        "env"   : env,
+        "cwd"   : cwd,
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.PIPE,
+        "preexec_fn": os.setpgrp,  # os.setpgrp/os.setsid
+        "close_fds" : True,
+    }
+    proc = subprocess.Popen(**shell_opts)
+    # 设定超时
+    if timeout<=0:
+        deadline = 0
+    else:
+        deadline = time.time() + timeout
+    # 等待执行结束
+    try:
+        while proc.poll() is None:
+            #print("exec...")
+            if deadline>0 and time.time()>=deadline:
+                #print("kill...")
+                proc.kill()  # terminate()
+            time.sleep(1)
+    except KeyboardInterrupt as exc:  # ctrl+c
+        traceback.print_exc()
+        proc.kill()
+        if raiseonerror:
+            raise RuntimeError("Timeout Error.")      
+    except:
+        traceback.print_exc()
+        if raiseonerror:
+            raise
+    # 执行结果
+    outs, errs = proc.communicate()
+    rets = proc.returncode
+    if rets!=0 and raiseonerror:
+        raise RuntimeError("[Shell Execute] Error #{}: {}".format(rets, errs))
+    return rets, outs, errs if rets!=0 else None
+
+
+def myconfig(configfile=None, fileformat=None, autocast=None):
+    def _loadini(configfile, autocast=True):
+        configfile, fileformat = configfile, "ini"
+        autocast = True if autocast is None else autocast
+        config = {}
+        parser = ConfigParser()
+        parser.list_values = False
+        with codecs.open(configfile,"r","utf-8") as fp:
+            parser.readfp(fp)
+        for section in parser.sections():
+            for itemkey, itemvalue in parser.items(section):
+                confkey = "{}.{}".format(section.lower(), itemkey.lower())
+                if autocast:
+                    # 移走首尾引号
+                    if len(itemvalue)>1 and itemvalue.startswith("\"") and itemvalue.endswith("\""):
+                        itemvalue = itemvalue[1:-1]
+                    elif len(itemvalue)>1 and itemvalue.startswith("'") and itemvalue.endswith("'"):
+                        itemvalue = itemvalue[1:-1]
+                    # 转换bool类型
+                    if itemvalue.lower()=="true":
+                        itemvalue = True
+                    elif itemvalue.lower()=="false":
+                        itemvalue = False
+                    # 转换null类型
+                    elif itemvalue.lower()=="none":
+                        itemvalue = None
+                    elif itemvalue.lower()=="null":
+                        itemvalue = None
+                    # 转换数值
+                    elif itemvalue.isdigit():
+                        itemvalue = int(itemvalue)
+                    elif itemvalue.isdecimal():
+                        itemvalue = float(itemvalue)
+                config[confkey] = itemvalue
+        return config
+
+    def _loadxml(configfile, autocast=True):
+        return {}
+   
+    def _loadyaml(configfile, autocast=True):
+        return {}
+
+    autocast = True if autocast is None else autocast
+    if configfile is None:
+        return {}
+    if fileformat is None:
+        ext = os.path.splitext(configfile)[1].lower()
+        if ext==".ini":
+            self._fileformat ="ini"
+        elif ext==".xml":
+            self._fileformat ="xml"
+        elif ext==".yaml":
+            self._fileformat ="yaml"
+        else:
+            self._fileformat ="ini"
+    elif fileformat in ["ini", "xml", "yaml"]:
+        fileformat = fileformat
+    else:  # todo: 自动探测配置文件格式
+        raise RuntimeError("[myconfig] unsupported config file. {}".format(fileformat))
+    # 加载配置文件
+    if fileformat=="ini":
+        return _loadini(configfile, autocast=autocast)
 
 
 def init_webdriver(driverclass, driverpath=None):
@@ -81,6 +215,10 @@ def init_webdriver(driverclass, driverpath=None):
 
 def text2date(desctext, fmt=None):
     """ 将日期描述文本转换为具体日期
+    支持格式：今天、昨天、前天、n天前、n周前、
+    yyyy年mm月dd日、yy年mm月dd日、mm月dd日、
+    yyyy-mm-dd、yy-mm-dd、mm-dd、
+    yyyy/mm/dd、yy/mm/dd、mm/dd、
     """
     fmt = fmt or "%Y%m%d"
     if desctext=="今天":
@@ -99,6 +237,8 @@ def text2date(desctext, fmt=None):
         y = int(desctext[ :desctext.index("年") ])
         m = int(desctext[ desctext.index("年")+1:desctext.index("月") ])
         d = int(desctext[ desctext.index("月")+1:desctext.index("日") ])
+        if y<100:
+            y += 2000
         text = datetime(y, m, d).strftime(fmt)
     elif desctext.find("月")>0 and desctext.find("日")>0:
         y = datetime.today().year
@@ -109,11 +249,25 @@ def text2date(desctext, fmt=None):
         y = int(desctext.split("-")[0])
         m = int(desctext.split("-")[1])
         d = int(desctext.split("-")[2])
+        if y<100:
+            y += 2000
+        text = datetime(y, m, d).strftime(fmt)
+    elif len(desctext.split("-"))==2:
+        y = datetime.today().year
+        m = int(desctext.split("-")[0])
+        d = int(desctext.split("-")[1])
         text = datetime(y, m, d).strftime(fmt)
     elif len(desctext.split("/"))==3:
         y = int(desctext.split("/")[0])
         m = int(desctext.split("/")[1])
         d = int(desctext.split("/")[2])
+        if y<100:
+            y += 2000
+        text = datetime(y, m, d).strftime(fmt)
+    elif len(desctext.split("/"))==2:
+        y = datetime.today().year
+        m = int(desctext.split("/")[0])
+        d = int(desctext.split("/")[1])
         text = datetime(y, m, d).strftime(fmt)
     else:
         text = desctext
@@ -121,6 +275,8 @@ def text2date(desctext, fmt=None):
 
 
 def html2markdown(html, ext=None):
+    """ 将html格式转markdown格式。使用html2text库。
+    """
     # 初始化
     # 更多参数见 https://github.com/Alir3z4/html2text/blob/master/html2text/cli.py
     ext = ext or ""
@@ -145,8 +301,8 @@ def html2markdown(html, ext=None):
 
 
 def _pretty_markdown(mdtext):
-    """ 将markdown文本格式标准化
-    标准化处理以下内容：
+    """ 将markdown文本格式美化
+    美化处理以下内容：
     1. 多个空行合并为1个
     2. header行的最高级数限制为3级（文章标题为2级header）
     3. image格式规整
@@ -191,6 +347,8 @@ def _pretty_markdown(mdtext):
 
 
 def convert_image(img, fmt=None):
+    """ 转换图片格式。缺省转为JPEG格式。
+    """
     fmt = (fmt or "jpeg").lower()
     src_fmt = img.format.lower()
     if fmt==src_fmt:

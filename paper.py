@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+# paper.py
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+    )
 
 import abc
 import codecs
@@ -54,9 +57,7 @@ class Paper():
         cls_str = ""
         cls_str += "class: {}\n".format(self._class_name)
         cls_str += "title: {}\n".format(self.title)
-        cls_str += "publish_info:\n"
-        for line in self.publish_info:
-            cls_str += "{}\n".format(line)
+        cls_str += "publish_info:\n{}\n".format("\n".join(self.publish_info))
         cls_str += "publish_date: {}\n".format(self.publish_date)
         cls_str += "markdown:\n{}\n".format(self.markdown)
         return cls_str
@@ -115,9 +116,40 @@ class Paper():
         }
         options = options or {}
         options = dict(default_options, **options)
-        print("[paper] save paper ...")
+        # 如果有git信息，则web根目录由git配置决定
+        if options.get("git.local"):
+            options["root_dir"] = options.get("git.local")
+        # 下载图片，并改写markdown image地址为本地（所以要先做图片下载，再做文档保存）
+        if options["include_image"]=="true" or options["include_image"]==True:
+            image_files = self._save_images(options)
         if options["format"]=="markdown":
-            self._save_as_md(options)
+            doc_file = self._save_as_md(options)
+        # 维护索引文件
+        if options["include_index"]=="true" or options["include_index"]==True:
+            index_file = self._write_index(options)
+        # 返回保存过程涉及的文件
+        return dict( image_files.items() + doc_file.items() + index_file.items() )
+
+    def publish(self, options=None):
+        #options = options or {}  # ???
+        # 检查git
+        if not self._check_git(options):
+            return -1
+        # 获取git 本地目录
+        git_local = options.get("git.local") or "."
+        git_path = os.path.abspath(git_local)
+        # 本地repo提交
+        commands = "git pull; git status; git add .; git commit -m \"add paper\"; git push;"
+        for cmd in commands.split(";"):
+            if cmd.strip()=="":
+                continue
+            rets, outs, errs = shellexec(cmd, cwd=git_path, raiseonerror=False, timeout=120)
+            print("$>", cmd)
+            print(outs or "")
+            print(errs or "")
+            if rets!=0:
+                break
+        return rets
 
     def close(self):
         self.__exit__()
@@ -166,7 +198,9 @@ class Paper():
         return ["-标签功能未实现-"]
 
     def _save_as_md(self, options):
-        # 
+        #
+        doc_format = "md"
+        doc_path = options["doc_path"]  # doc目录在web root的相对地址
         doc_dir = os.path.abspath(os.path.join(options["root_dir"], options["doc_path"]))  # doc目录在本地文件系统中的绝对路径
         doc_name_formater = lambda _: string.Template(options["doc_name_format"]).safe_substitute(_)
         doc_name_info = {
@@ -181,11 +215,8 @@ class Paper():
             "title_abbr": self.title_abbr,
         }
         doc_name  = doc_name_formater(doc_name_info)
-        # 下载图片，并改写markdown image地址为本地
-        if options["include_image"]=="true" or options["include_image"]==True:
-            self._save_images(options)
         # 写文章文件
-        doc_file = os.path.join(doc_dir, "{}.md".format(doc_name))
+        doc_file = os.path.join(doc_dir, "{}.{}".format(doc_name, doc_format))
         with codecs.open(doc_file, "w", encoding="utf-8") as f:
             # 写文章标题
             f.write("## {}  \n\n".format(self.title))
@@ -197,12 +228,13 @@ class Paper():
             f.write("\n")
             # 写文章内容
             f.write(self.markdown)
-        # 写索引文件
-        if options["include_index"]=="true" or options["include_index"]==True:
-            self._write_index(options)
+        print("[debug] doc_file:", doc_file)
+        doc_result = { doc_file : {"path": os.path.join(doc_path, "{}.{}".format(doc_name, doc_format)), } }
+        return doc_result
 
     def _save_images(self, options):
-        image_dir = os.path.abspath(os.path.join(options["root_dir"], options["image_path"]))  # image目录在本地文件系统中的绝对路径
+        image_path = options["image_path"]  # image目录在web root的相对地址
+        image_dir = os.path.abspath(os.path.join(options["root_dir"], image_path))  # image目录在本地文件系统中的绝对路径
         image_name_formater = lambda _: string.Template(options["image_name_format"]).safe_substitute(_)
         image_name_info = {
             # 发布日期相关变量
@@ -230,17 +262,14 @@ class Paper():
             # 图片序号+1
             image_sn += 1
             image_result[image_url] = {
-                "url"   : image_url,
                 "path"  : None,
-                "format": None,
                 "refcnt": 1,
             }
             # 下载图片
             chrome_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36"
-            # 404 Client Error, if headers include Host, Referer
-            #headers = requests.utils.default_headers()
-            #headers.update( { "Host": self._website, "Referer": self.url, "User-Agent": chrome_agent, } )
-            headers = { "User-Agent": chrome_agent }
+            headers = requests.utils.default_headers()
+            headers.update( { "User-Agent": chrome_agent, } )
+            #headers = { "User-Agent": chrome_agent }
             try:
                 resp = requests.get(image_url, headers=headers, stream=True)
             except:
@@ -266,14 +295,15 @@ class Paper():
                     img = convert_image(img, fmt=image_format)
                 image_file = os.path.join(image_dir, "{}.{}".format(image_name, image_format))
                 img.save(image_file, image_format)
-                image_result[image_url]["path"] = os.path.join(options["image_path"], "{}.{}".format(image_name, image_format))
-                image_result[image_url]["format"] = image_format
+                image_result[image_url]["path"] = os.path.join(image_path, "{}.{}".format(image_name, image_format))
                 # 替换原文中的web地址为本地站点相对地址
                 self.markdown = self.markdown.replace(image_url, image_result[image_url]["path"])
         return image_result
 
     def _write_index(self, options):
-        doc_dir = os.path.abspath(os.path.join(options["root_dir"], options["doc_path"]))  # doc目录在本地文件系统中的绝对路径
+        index_name, index_format = "index", "md"
+        doc_path = options["doc_path"]  # doc目录在web root的相对地址
+        doc_dir = os.path.abspath(os.path.join(options["root_dir"], doc_path))  # doc目录在本地文件系统中的绝对路径
         doc_name_formater = lambda _: string.Template(options["doc_name_format"]).safe_substitute(_)
         doc_name_info = {
             # 发布日期相关变量
@@ -288,7 +318,7 @@ class Paper():
         }
         doc_name  = doc_name_formater(doc_name_info)
         # 生成要处理的索引相关信息
-        index_file = os.path.join(doc_dir, "index.md")
+        index_file = os.path.join(doc_dir, "{}.{}".format(index_name, index_format))
         index_section = "**[{}-{}]**".format(self.publish_date[0:4], self.publish_date[4:6])
         # fixed: github index.md show url(include table symbol) error
         index_line = "+ [{}]({}) <sub>[\[{}\]]({})</sub>".format(self.title.replace("|",""), doc_name, self._website, self.url)
@@ -330,6 +360,59 @@ class Paper():
         # 写入索引文件
         with codecs.open(index_file, "w", encoding="utf-8") as f:
             f.write("\n".join(content))
+        index_result = { index_file : {"path": os.path.join(doc_path, "{}.{}".format(index_name, index_format)), } }
+        return index_result
+
+    def _check_git(self, options):
+        # 检查git配置
+        git_repository = options.get("git.repository") or ""
+        if git_repository=="":
+            return False  # 未配置git repo，不做git操作
+        git_local = options.get("git.local") or ""
+        if git_local=="":
+            return False  # 未配置git local，不做git操作
+        # 检查本地git repo是否与配置一致
+        git_path = os.path.abspath(git_local)
+        check_cmd = "git config --local --list"
+        rets, outs, errs = shellexec(check_cmd, cwd=git_path, raiseonerror=False)
+        #print("$>", check_cmd)
+        #print(outs or "")
+        #print(errs or "")
+        if rets!=0:
+            return False
+        for line in outs.split("\n"):
+            if line.strip()=="":
+                continue
+            key, value = line.split("=", 1)
+            if key=="remote.origin.url":
+                git_repository = options.get("git.repository") or ""
+                # 如果没有配置git.repository信息，则不检查及处理git user.name
+                if git_repository=="":
+                    raise RuntimeError("Missing git repository.")
+                if value==git_repository:
+                    continue
+                raise RuntimeError("The git repository configured is inconsistent with the repository in the local.")
+            if key=="user.name":
+                git_user_name = options.get("git.user.name") or ""
+                # 如果没有配置git.user.name信息，则不检查及处理git user.name
+                if git_user_name=="":
+                    continue
+                if value==git_user_name:
+                    continue
+                # 不一致的话，重置user name
+                cmd = "git config --local user.name \"{}\"".format(git_user_name)
+                shellexec(cmd, cwd=git_path, raiseonerror=False)
+            if key=="user.email":
+                git_user_email = options.get("git.user.email") or ""
+                # 如果没有配置git.user.name信息，则不检查及处理git user.name
+                if git_user_email=="":
+                    continue
+                if value==git_user_email:
+                    continue
+                # 不一致的话，重置user email
+                cmd = "git config --local user.email \"{}\"".format(git_user_email)
+                shellexec(cmd, cwd=git_path, raiseonerror=False)
+        return True if rets==0 else False
 
 
 def load_paper(*argv, **kwargs):

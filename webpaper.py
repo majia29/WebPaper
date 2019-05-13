@@ -1,17 +1,17 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+    )
 
-import os
 import sys
-import time
-import traceback
 
 from paper import load_paper
+from util import myconfig
 
 __all__ = [
 ]
@@ -34,14 +34,8 @@ def main(*argv, **kwargs):
 
     url = args[0]
 
-    # todo: 通过配置文件，或者`git config --local --list`获取git配置信息
-    # 自动提交github
-    git_conf = {
-        "repository": "git@github.com:majia29/webdigg.git",
-        "user.name" : "majia29",
-        "user.email": "majia29@gmail.com",
-        "local"     : "../webdigg",  # web页面存放地址
-    }
+    # 读取配置(目前只包括git)
+    git_conf = myconfig("webpaper.conf", fileformat="ini")
 
     # 开始执行
     page = load_paper(url=url)
@@ -49,9 +43,12 @@ def main(*argv, **kwargs):
         "include_index": "true",
         "include_image": "true",
     }
-    if git_conf.get("local"):
-        save_opts["root_dir"] = git_conf.get("local")
+    save_opts = dict(save_opts, **git_conf)
     page.save(options=save_opts)
+    # 如果有git配置信息
+    if git_conf.get("git.repository"):
+        page.publish(git_conf)
+    # 返回
     return 0
 
 
