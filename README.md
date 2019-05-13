@@ -30,8 +30,8 @@ python webpaper.py https://www.infoq.cn/article/oZCcFAC7J4-01yFTG5r3
 
 如果也想发布到github.io，则需要做以下简单步骤即可:
 
-1. 新建一个使用GitHub Pages的Repo。Repo如何配置GitHub Pages，请自行处理，不在此说明。
-2. 参考本项目中的webpaper.conf.template，配置好git 发布信息
-3. 之前的使用方式，执行命令即可
+1. 新建一个使用GitHub Pages的Repo。Repo如何配置GitHub Pages，请自行处理，不在此说明；
+2. 参考本项目中的webpaper.conf.template，配置好git发布信息，另存配置文件名为webpaper.conf；
+3. 之前的使用方式，执行命令即可。
 
 ok.
