@@ -215,18 +215,22 @@ def init_webdriver(driverclass, driverpath=None):
 
 def text2date(desctext, fmt=None):
     """ 将日期描述文本转换为具体日期
-    支持格式：今天、昨天、前天、n天前、n周前、
+    支持格式：今天、昨天、前天、n分钟前、n小时前、n天前、n周前、
     yyyy年mm月dd日、yy年mm月dd日、mm月dd日、
     yyyy-mm-dd、yy-mm-dd、mm-dd、
     yyyy/mm/dd、yy/mm/dd、mm/dd、
     """
     fmt = fmt or "%Y%m%d"
-    if desctext=="今天":
+    if desctext=="今天" or desctext=="Today":
         text = datetime.today().strftime(fmt)
-    elif desctext=="昨天":
+    elif desctext=="昨天" or desctext=="Yesterday":
         text = (datetime.today() - timedelta(days=1)).strftime(fmt)
     elif desctext=="前天":
         text = (datetime.today() - timedelta(days=2)).strftime(fmt)
+    elif desctext.endswith("分钟前"):
+        text = datetime.today().strftime(fmt)
+    elif desctext.endswith("小时前"):
+        text = datetime.today().strftime(fmt)
     elif desctext.endswith("天前"):
         delta = int(desctext[ :desctext.index("天前") ])
         text = (datetime.today() - timedelta(days=delta)).strftime(fmt)

@@ -56,7 +56,7 @@ class MPPaper(Paper):
                 if element_id=="profileBt":
                     js_name = rich_media_meta.find_element_by_id("js_name")
                     js_name_text = js_name.get_attribute('innerHTML').strip()
-                    publish_info.append("作者: " + js_name_text)
+                    publish_info.append("发布: " + js_name_text)
                 elif element_id=="publish_time":
                     rich_media_meta_text = rich_media_meta.get_attribute('innerHTML').strip()
                     rich_media_meta_text = text2date(rich_media_meta_text, fmt="%Y-%m-%d")

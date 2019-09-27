@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# paper.py
+# git.py
 
 from __future__ import (
     absolute_import,
@@ -8,47 +8,53 @@ from __future__ import (
     unicode_literals,
     )
 
-import abc
-import codecs
-import inspect
+import getpass
 import os
-import re
-import requests
-import string
+import socket
+import subprocess
+import sys
 import time
 import traceback
-from urlparse import urlsplit
-
-from PIL import Image
-from selenium.common.exceptions import TimeoutException as WebTimeoutException
-from selenium.webdriver.common.by import By as WebBy
-from selenium.webdriver.common.keys import Keys as WebKeys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as WebEC
-
-from pinyin import Pinyin
-from util import *
 
 __all__ = [ 
-    "load_paper",
-    "Paper",
+    "GitRepo",
 ]
 
 
-class Paper():
-    """ 一个空的网络文章类，作为各个具体网站文章的根类
-    具体各个网站文章内容的抽取，由各个具体文章类实现。
+class GitRepo():
+    """ git repo操作类
     """
-    def __init__(self, url, driver=None):
-        """ 文章类初始化
+    def __init__(self, repo_dir=None, executable_path=None):
+        """ git repo类初始化
         """
+        ENV_PATH_SEP = ":"
         # 标准类变量
         self._class_name = self.__class__.__name__
         # 输入参数检查
-        self._check_url(url, site=self._website, path=self._paperpath)
+        self.repo_dir = os.path.abspath(repo_dir or ".")
+        # 如果配置了有效的执行路径，则抽取git命令信息，并修改git执行时的环境变量
+        self.env = os.environ
+        if executable_path is None:
+            self.git_dir = None
+            self.git_bin = "git"
+        elif os.path.exists(executable_path) and os.path.isfile(executable_path):
+            self.git_dir = os.path.dirname (os.path.abspath(executable_path))  # git 命令所在目录
+            self.git_bin = os.path.basename(os.path.abspath(executable_path))  # git 命令
+            # 如果PATH环境变量中没有git命令所在目录，则修改之
+            env_paths = self.env.get("PATH","").split(ENV_PATH_SEP)
+            if self.git_dir not in env_paths:
+                env_paths.append(self.git_dir)
+                self.env["PATH"] = ENV_PATH_SEP.join(env_paths)
+        else:
+            raise RuntimeError("Invalid executable_path. {}".format(executable_path))
+        # 检查git是否存在
+        if not self._exists_git(self.git_bin, self.env):
+            raise RuntimeError("Not found git.")
         # 创建内部对象
-        self._driver = driver or init_webdriver("chrome", "drivers/chromedriver")
-        self.open(url)
+        self._conf = self._get_conf("")
+
+executable_path
+executable_path
 
     def __enter__(self):
         return self._driver
@@ -74,8 +80,8 @@ class Paper():
     def html_source(self):
         return self._driver.page_source
 
-    def open(self, url):
-        """ 读取文章，并生成文章对象属性
+    def config(self):
+        """ 读取repo config
         """
         self._check_url(url, self._website, self._paperpath)
         self._driver.get(url)
@@ -127,29 +133,11 @@ class Paper():
         # 维护索引文件
         if options["include_index"]=="true" or options["include_index"]==True:
             index_file = self._write_index(options)
+        # 操作git
+        if self._check_git(options):
+            self._git_publish(options)
         # 返回保存过程涉及的文件
         return dict( image_files.items() + doc_file.items() + index_file.items() )
-
-    def publish(self, options=None):
-        #options = options or {}  # ???
-        # 检查git
-        if not self._check_git(options):
-            return -1
-        # 获取git 本地目录
-        git_local = options.get("git.local") or "."
-        git_path = os.path.abspath(git_local)
-        # 本地repo提交
-        commands = "git pull; git status; git add .; git commit -m \"add paper\"; git push;"
-        for cmd in commands.split(";"):
-            if cmd.strip()=="":
-                continue
-            rets, outs, errs = shellexec(cmd, cwd=git_path, raiseonerror=False, timeout=120)
-            print("$>", cmd)
-            print(outs or "")
-            print(errs or "")
-            if rets!=0:
-                break
-        return rets
 
     def close(self):
         self.__exit__()
@@ -372,14 +360,32 @@ class Paper():
         if git_local=="":
             return False  # 未配置git local，不做git操作
         # 检查本地git repo是否与配置一致
-        git_path = os.path.abspath(git_local)
-        check_cmd = "git config --local --list"
-        rets, outs, errs = shellexec(check_cmd, cwd=git_path, raiseonerror=False)
+        git_cwd = os.path.abspath(git_local)
+        check_cmd = "git status"
+        rets, outs, errs = _shell_exec(check_cmd, cwd=git_cwd, raiseonerror=False, timeout=120)
         #print("$>", check_cmd)
         #print(outs or "")
         #print(errs or "")
+        return True if rets==0 else False
+
+    def _git_publish(self, options):
+        # 检查git配置
+        git_repository = options.get("git.repository") or ""
+        if git_repository=="":
+            raise RuntimeError("git repository missing.")
+        git_local = options.get("git.local") or ""
+        if git_local=="":
+            raise RuntimeError("git local missing.")
+        # 
+        git_cwd = os.path.abspath(git_local)
+        # 先检查repo本地配置
+        list_cmd = "git config --local --list"
+        rets, outs, errs = _shell_exec(list_cmd, cwd=git_cwd, raiseonerror=False, timeout=120)
+        print("$>", list_cmd)
+        print(outs or "")
+        print(errs or "")
         if rets!=0:
-            return False
+            return rets
         for line in outs.split("\n"):
             if line.strip()=="":
                 continue
@@ -388,10 +394,10 @@ class Paper():
                 git_repository = options.get("git.repository") or ""
                 # 如果没有配置git.repository信息，则不检查及处理git user.name
                 if git_repository=="":
-                    raise RuntimeError("Missing git repository.")
+                    raise RuntimeError("ERROR: 没有配置git repo")
                 if value==git_repository:
                     continue
-                raise RuntimeError("The git repository configured is inconsistent with the repository in the local.")
+                return -1002  # 配置的git repo与本地路径下的repo不一致
             if key=="user.name":
                 git_user_name = options.get("git.user.name") or ""
                 # 如果没有配置git.user.name信息，则不检查及处理git user.name
@@ -399,9 +405,8 @@ class Paper():
                     continue
                 if value==git_user_name:
                     continue
-                # 不一致的话，重置user name
-                cmd = "git config --local user.name \"{}\"".format(git_user_name)
-                shellexec(cmd, cwd=git_path, raiseonerror=False)
+                set_cmd = "git config --local user.name \"{}\"".format(git_user_name)
+                _shell_exec(set_cmd, cwd=git_cwd, raiseonerror=False, timeout=120)
             if key=="user.email":
                 git_user_email = options.get("git.user.email") or ""
                 # 如果没有配置git.user.name信息，则不检查及处理git user.name
@@ -409,38 +414,34 @@ class Paper():
                     continue
                 if value==git_user_email:
                     continue
-                # 不一致的话，重置user email
-                cmd = "git config --local user.email \"{}\"".format(git_user_email)
-                shellexec(cmd, cwd=git_path, raiseonerror=False)
-        return True if rets==0 else False
+                set_cmd = "git config --local user.email \"{}\"".format(git_user_email)
+                _shell_exec(set_cmd, cwd=git_cwd, raiseonerror=False, timeout=120)
+        # 本地repo提交
+        commands = "git config --local --list; git status; git add .; git commit -m \"add paper\"; git push;"
+        for cmd in commands.split(";"):
+            if cmd.strip()=="":
+                continue
+            rets, outs, errs = _shell_exec(cmd, cwd=git_cwd, raiseonerror=False, timeout=120)
+            print("$>", cmd)
+            print(outs or "")
+            print(errs or "")
+            if rets!=0:
+                break
+        return rets
 
 
-def load_paper(*argv, **kwargs):
-    """ 动态加载游戏具体网站文章类库，并返回带参数的网站文章类实例
+def _get_default_identity(env=None):
+    """ 
     """
-    # 解析url参数
-    url = kwargs.get("url", argv[0] if argv else None)
-    # 将url转库名。网站地址即为文章类库名
-    # 为了避免目录结构复杂，不做多级目录，将点字符转下划线
-    if url:
-        if url.find("://")==-1:
-            url = "http://{}".format(url)
-        urls = urlsplit(url)
-        # patch: python不支持数字开始的变量名，
-        # 因此对于以数字开始的域名，前面补www
-        netloc = urls.netloc
-        if unicode(netloc)[0].isnumeric():
-            netloc = "www." + netloc
-        paperlib = netloc.replace(".","_")
-    else:
-        raise RuntimeError("missing url")
-    # 动态加载
-    module = __import__(paperlib)
-    for member in inspect.getmembers(module):
-        # 判断该成员是否为一个网站文章类，排除根类
-        instance_name, instance_class = member[0], member[1]
-        if issubclass(instance_class, Paper) and instance_name!="Paper":
-            # 带参数实例化
-            return instance_class(*argv, **kwargs)
-    raise RuntimeError("paper class #{} is not found.".format(paperlib))
+    env = env or os.environ
+    # 取user
+    user = env.get("USER") or ""
+    if user=="":
+        user = getpass.getuser()
+    # 取email
+    email = env.get("EMAIL") or ""
+    if email=="":
+        domain = socket.gethostname()
+        email = "{}@{}".format(user, domain)
+    return (user, email)
 
