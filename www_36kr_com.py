@@ -46,12 +46,11 @@ class Www36KrPaper(Paper):
         kr_article_inner = kr_article.find_element_by_class_name("kr-article-inner")
         article_content = kr_article_inner.find_element_by_class_name("article-content")
         try:
+            # 抽取发布者
             item_a = article_content.find_element_by_class_name("item-a")
             item_a_text = item_a.get_attribute('innerHTML').strip()
             publish_info.append("发布: " + item_a_text)
-        except:
-            pass
-        try:
+            # 抽取发布日期
             item_time = article_content.find_element_by_class_name("item-time")
             item_time_text = item_time.get_attribute('innerHTML').strip()
             item_time_text = text2date(item_time_text, fmt="%Y-%m-%d")
@@ -73,15 +72,18 @@ class Www36KrPaper(Paper):
         #                   <div class="article-title-icon"
         #                       <a class="title-icon-item item-a">${作者}</a>
         #                       <span class="title-icon-item item-time">·${时间}</span>
-        app = self._driver.find_element_by_id("app")
-        kr_article_box = app.find_element_by_class_name("kr-article-box")
-        kr_article = kr_article_box.find_element_by_class_name("kr-article")
-        kr_article_inner = kr_article.find_element_by_class_name("kr-article-inner")
-        article_content = kr_article_inner.find_element_by_class_name("article-content")
-        item_time = article_content.find_element_by_class_name("item-time")
-        item_time_text = item_time.get_attribute('innerHTML').strip()
-        # 发布日期转换
-        publish_date = text2date(item_time_text, fmt="%Y%m%d")
+        try:
+            app = self._driver.find_element_by_id("app")
+            kr_article_box = app.find_element_by_class_name("kr-article-box")
+            kr_article = kr_article_box.find_element_by_class_name("kr-article")
+            kr_article_inner = kr_article.find_element_by_class_name("kr-article-inner")
+            article_content = kr_article_inner.find_element_by_class_name("article-content")
+            item_time = article_content.find_element_by_class_name("item-time")
+            item_time_text = item_time.get_attribute('innerHTML').strip()
+            # 发布日期转换
+            publish_date = text2date(item_time_text, fmt="%Y%m%d")
+        except:
+            pass
         return publish_date
 
     def _gen_markdown(self):

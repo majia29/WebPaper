@@ -39,6 +39,10 @@ class Paper():
     """ 一个空的网络文章类，作为各个具体网站文章的根类
     具体各个网站文章内容的抽取，由各个具体文章类实现。
     """
+    _website   = "web.com"
+    _paperpath = "/"
+    _sitename  = "web"
+
     def __init__(self, url, driver=None):
         """ 文章类初始化
         """
@@ -427,7 +431,7 @@ def load_paper(*argv, **kwargs):
             url = "http://{}".format(url)
         urls = urlsplit(url)
         # patch: python不支持数字开始的变量名，
-        # 因此对于以数字开始的域名，前面补www
+        # 因此对于以数字开始的域名，其class名前面补www
         netloc = urls.netloc
         if unicode(netloc)[0].isnumeric():
             netloc = "www." + netloc

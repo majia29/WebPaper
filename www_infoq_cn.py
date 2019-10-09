@@ -48,20 +48,17 @@ class InfoQPaper(Paper):
         article_main = main_content.find_element_by_class_name("article-main")
         article_detail_elements = article_main.find_elements_by_class_name("article-detail")
         try:
+            # 抽取作者
             author = article_detail_elements[0].find_element_by_class_name("author")
             com_author_name = author.find_element_by_class_name("com-author-name")
             com_author_name_text = com_author_name.get_attribute('innerHTML').strip()
             publish_info.append("作者: " + com_author_name_text)
-        except:
-            pass
-        try:
+            # 抽取译者
             translate = article_detail_elements[0].find_element_by_class_name("translate")
             com_author_name = translate.find_element_by_class_name("com-author-name")
             com_author_name_text = com_author_name.get_attribute('innerHTML').strip()
             publish_info.append("译者: " + com_author_name_text)
-        except:
-            pass
-        try:
+            # 抽取发布日期
             read_number = article_detail_elements[1].find_element_by_class_name("read-number")
             article_date = read_number.find_element_by_class_name("date")
             article_date_text = article_date.get_attribute('innerHTML').strip()
@@ -80,15 +77,18 @@ class InfoQPaper(Paper):
         #           <div class="article-detail">
         #           <div class="article-detail">
         #               <span class="date">
-        page_article = self._driver.find_element_by_class_name("page-article")
-        main_content = page_article.find_element_by_class_name("main-content")
-        article_main = main_content.find_element_by_class_name("article-main")
-        article_detail_elements = article_main.find_elements_by_class_name("article-detail")
-        article_detail = article_detail_elements[1]
-        article_date = article_detail.find_element_by_class_name("date")
-        article_date_text = article_date.get_attribute('innerHTML').strip()
-        # 发布日期转换
-        publish_date = text2date(article_date_text, fmt="%Y%m%d")
+        try:
+            page_article = self._driver.find_element_by_class_name("page-article")
+            main_content = page_article.find_element_by_class_name("main-content")
+            article_main = main_content.find_element_by_class_name("article-main")
+            article_detail_elements = article_main.find_elements_by_class_name("article-detail")
+            article_detail = article_detail_elements[1]
+            article_date = article_detail.find_element_by_class_name("date")
+            article_date_text = article_date.get_attribute('innerHTML').strip()
+            # 发布日期转换
+            publish_date = text2date(article_date_text, fmt="%Y%m%d")
+        except:
+            pass        
         return publish_date
 
     def _gen_markdown(self):
