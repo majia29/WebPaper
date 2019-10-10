@@ -96,6 +96,11 @@ class Paper():
         for image_element in image_elements:
             self._driver.execute_script('return arguments[0].scrollIntoView(true);', image_element)
             time.sleep(2)
+        print("[paper] load figure ...")
+        figure_elements = self._driver.find_elements_by_tag_name("figure")
+        for figure_element in figure_elements:
+            self._driver.execute_script('return arguments[0].scrollIntoView(true);', figure_element)
+            time.sleep(2)
         # 抽取文章信息
         print("[paper] extract info ...")
         pinyin = Pinyin()
