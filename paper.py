@@ -280,7 +280,14 @@ class Paper():
             headers.update( { "User-Agent": chrome_agent, } )
             #headers = { "User-Agent": chrome_agent }
             try:
-                resp = requests.get(image_url, headers=headers, stream=True)
+                # patch: relative url to absolute url
+                abs_url = image_url
+                if not image_url.startswith("http://"):
+                    if image_url.startswith("/"):
+                        abs_url = "http://{}{}".format(self._website, image_url)
+                    else:
+                        abs_url = "http://{}{}/{}".format(self._website, self._paperpath, image_url)
+                resp = requests.get(abs_url, headers=headers, stream=True)
             except:
                 traceback.print_exc()
                 continue
