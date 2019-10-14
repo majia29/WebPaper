@@ -282,7 +282,7 @@ class Paper():
             try:
                 # patch: relative url to absolute url
                 abs_url = image_url
-                if not image_url.startswith("http://"):
+                if not image_url.startswith("http"):
                     if image_url.startswith("/"):
                         abs_url = "http://{}{}".format(self._website, image_url)
                     else:
