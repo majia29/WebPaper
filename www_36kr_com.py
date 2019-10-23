@@ -23,7 +23,22 @@ class Www36KrPaper(Paper):
     def _get_title(self):
         """ 抽取文章标题
         """
-        return self._driver.title
+        title_text = self._driver.title
+        #<div id="app">
+        #   <div class="kr-article-box"
+        #       <div class="kr-article"
+        #           <div class="article-content"
+        #               <h1 class="article-title">${标题}</h1>
+        try:
+            app = self._driver.find_element_by_id("app")
+            kr_article_box = app.find_element_by_class_name("kr-article-box")
+            kr_article = kr_article_box.find_element_by_class_name("kr-article")
+            article_content = kr_article.find_element_by_class_name("article-content")
+            h1 = article_content.find_element_by_class_name("article-title")
+            title_text = h1.get_attribute('innerHTML').strip()
+        except:
+            pass
+        return title_text
 
     def _get_publish_info(self):
         """ 抽取文章发布信息
