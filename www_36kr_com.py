@@ -68,6 +68,10 @@ class Www36KrPaper(Paper):
             # 抽取发布日期
             item_time = article_content.find_element_by_class_name("item-time")
             item_time_text = item_time.get_attribute('innerHTML').strip()
+            # 额外处理
+            if item_time_text.find("<!-- -->")!=-1:
+                item_time_text = item_time_text.split("<!-- -->")[1]
+            # 发布日期转换
             item_time_text = text2date(item_time_text, fmt="%Y-%m-%d")
             publish_info.append("发布日期: " + item_time_text)
         except:
@@ -95,6 +99,9 @@ class Www36KrPaper(Paper):
             article_content = kr_article_inner.find_element_by_class_name("article-content")
             item_time = article_content.find_element_by_class_name("item-time")
             item_time_text = item_time.get_attribute('innerHTML').strip()
+            # 额外处理
+            if item_time_text.find("<!-- -->")!=-1:
+                item_time_text = item_time_text.split("<!-- -->")[1]
             # 发布日期转换
             publish_date = text2date(item_time_text, fmt="%Y%m%d")
         except:
