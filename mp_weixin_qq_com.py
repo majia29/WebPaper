@@ -87,14 +87,16 @@ class MPPaper(Paper):
             pass
         return publish_date
 
-    def _gen_markdown(self):
-        md_text = ""
+    def _get_content(self):
         #<div id="page-content" class="rich_media_area_primary">
         #   <div class="rich_media_content " id="js_content">
         page_content = self._driver.find_element_by_id("page-content")
         rich_media_content = page_content.find_element_by_class_name("rich_media_content")
-        rich_media_content_text = rich_media_content.get_attribute('innerHTML').strip()
-        html_text = rich_media_content_text
+        return rich_media_content
+
+    def _gen_markdown(self):
+        content = self._get_content()
+        html_text = content.get_attribute('innerHTML')
         md_text = html2markdown(html_text, ext="pretty")
         return md_text
 

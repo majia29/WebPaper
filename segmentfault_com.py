@@ -86,10 +86,14 @@ class SFPaper(Paper):
             pass
         return publish_date
 
-    def _gen_markdown(self):
+    def _get_content(self):
         #<div class="article fmt article__content">
         article_content = self._driver.find_element_by_class_name("article__content")
-        html_text = article_content.get_attribute('innerHTML')
+        return article_content
+        
+    def _gen_markdown(self):
+        content = self._get_content()
+        html_text = content.get_attribute('innerHTML')
         md_text = html2markdown(html_text, ext="pretty")
         return md_text
 

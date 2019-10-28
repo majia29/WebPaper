@@ -11,11 +11,11 @@ from paper import Paper
 from util import *
 
 __all__ = [
-    "Www36KrPaper",
+    "KrPaper",
 ]
 
 
-class Www36KrPaper(Paper):
+class KrPaper(Paper):
     _website   = "36kr.com"
     _paperpath = "/p"
     _sitename  = "36氪"
@@ -108,7 +108,7 @@ class Www36KrPaper(Paper):
             pass
         return publish_date
 
-    def _gen_markdown(self):
+    def _get_content(self):
         #<div id="app">
         #   <div class="kr-article-box"
         #       <div class="kr-article"
@@ -121,6 +121,10 @@ class Www36KrPaper(Paper):
         kr_article_inner = kr_article.find_element_by_class_name("kr-article-inner")
         article_content = kr_article_inner.find_element_by_class_name("article-content")
         content = article_content.find_element_by_class_name("content")
+        return content
+
+    def _gen_markdown(self):
+        content = self._get_content()
         html_text = content.get_attribute('innerHTML')
         md_text = html2markdown(html_text, ext="pretty")
         return md_text

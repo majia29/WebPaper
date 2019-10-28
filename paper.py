@@ -61,9 +61,9 @@ class Paper():
         cls_str = ""
         cls_str += "class: {}\n".format(self._class_name)
         cls_str += "title: {}\n".format(self.title)
-        cls_str += "publish_info:\n{}\n".format("\n".join(self.publish_info))
-        cls_str += "publish_date: {}\n".format(self.publish_date)
-        cls_str += "markdown:\n{}\n".format(self.markdown)
+        #cls_str += "publish_info:\n{}\n".format("\n".join(self.publish_info))
+        #cls_str += "publish_date: {}\n".format(self.publish_date)
+        #cls_str += "markdown:\n{}\n".format(self.markdown)
         return cls_str
 
     def __exit__(self, type, value, trace):
@@ -90,14 +90,16 @@ class Paper():
         except WebTimeoutException:
             traceback.print_exc()
             raise
+        # optimize: 只加载正文部分图片，以加快处理速度
+        self.content = self._get_content()
         # patch: 处理图片lazy-loading
         print("[paper] load image ...")
-        image_elements = self._driver.find_elements_by_tag_name("img")
+        image_elements = self.content.find_elements_by_tag_name("img")
         for image_element in image_elements:
             self._driver.execute_script('return arguments[0].scrollIntoView(true);', image_element)
             time.sleep(2)
         print("[paper] load figure ...")
-        figure_elements = self._driver.find_elements_by_tag_name("figure")
+        figure_elements = self.content.find_elements_by_tag_name("figure")
         for figure_element in figure_elements:
             self._driver.execute_script('return arguments[0].scrollIntoView(true);', figure_element)
             time.sleep(2)

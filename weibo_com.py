@@ -11,11 +11,11 @@ from paper import Paper
 from util import *
 
 __all__ = [
-    "WeiboPaper",
+    "WBPaper",
 ]
 
 
-class WeiboPaper(Paper):
+class WBPaper(Paper):
     _website   = "weibo.com"
     _paperpath = "/ttarticle/p"
     _sitename  = "新浪微博"
@@ -80,6 +80,19 @@ class WeiboPaper(Paper):
         publish_date = text2date(time_text, fmt="%Y%m%d")
         return publish_date
 
+    def _get_content(self):
+        #<div class="WB_miniblog">
+        #   <div class="WB_main">
+        #       <div class="WB_artical">
+        #           <div class="main_editor">
+        #               <div class="WB_editor_iframe_new">
+        wb_miniblog = self._driver.find_element_by_class_name("WB_miniblog")
+        wb_main = wb_miniblog.find_element_by_class_name("WB_main")
+        wb_artical = wb_main.find_element_by_class_name("WB_artical")
+        main_editor = wb_artical.find_element_by_class_name("main_editor")
+        wb_editor_iframe_new = main_editor.find_element_by_class_name("WB_editor_iframe_new")
+        return wb_editor_iframe_new
+
     def _gen_markdown(self):
         #<div class="WB_miniblog">
         #   <div class="WB_main">
@@ -94,7 +107,7 @@ class WeiboPaper(Paper):
         main_toppic = wb_artical.find_element_by_class_name("main_toppic")
         main_toppic_text = main_toppic.get_attribute('innerHTML')
         main_editor = wb_artical.find_element_by_class_name("main_editor")
-        wb_editor_iframe_new = wb_artical.find_element_by_class_name("WB_editor_iframe_new")
+        wb_editor_iframe_new = main_editor.find_element_by_class_name("WB_editor_iframe_new")
         wb_editor_iframe_new_text = wb_editor_iframe_new.get_attribute('innerHTML')
         html_text = main_toppic_text + wb_editor_iframe_new_text
         md_text = html2markdown(html_text, ext="pretty")

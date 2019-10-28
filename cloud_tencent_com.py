@@ -11,11 +11,11 @@ from paper import Paper
 from util import *
 
 __all__ = [
-    "TencentCloudPaper",
+    "TCPaper",
 ]
 
 
-class TencentCloudPaper(Paper):
+class TCPaper(Paper):
     _website   = "cloud.tencent.com"
     _paperpath = "/developer/article"
     _sitename  = "腾讯云"
@@ -75,11 +75,15 @@ class TencentCloudPaper(Paper):
             pass
         return publish_date
 
-    def _gen_markdown(self):
+    def _get_content(self):
         #<div class="J-body col-body pg-article">
         #    <div class="c-markdown J-articleContent">
         articlecontent = self._driver.find_element_by_class_name("J-articleContent")
-        html_text = articlecontent.get_attribute('innerHTML')
+        return articlecontent
+
+    def _gen_markdown(self):
+        content = self._get_content()
+        html_text = content.get_attribute('innerHTML')
         md_text = html2markdown(html_text, ext="pretty")
         return md_text
 

@@ -11,11 +11,11 @@ from paper import Paper
 from util import *
 
 __all__ = [
-    "InfoQPaper",
+    "IQPaper",
 ]
 
 
-class InfoQPaper(Paper):
+class IQPaper(Paper):
     _website   = "www.infoq.cn"
     _paperpath = "/article"
     _sitename  = "InfoQ中文网"
@@ -90,6 +90,17 @@ class InfoQPaper(Paper):
         except:
             pass        
         return publish_date
+
+    def _get_content(self):
+        #<div class="page-article">
+        #   <div class="main-content">
+        #       <div class="article-main">
+        #           <div class="article-typo article-content">
+        page_article = self._driver.find_element_by_class_name("page-article")
+        main_content = page_article.find_element_by_class_name("main-content")
+        article_main = main_content.find_element_by_class_name("article-main")
+        article_content = article_main.find_element_by_class_name("article-content")
+        return article_content
 
     def _gen_markdown(self):
         #<div class="page-article">
