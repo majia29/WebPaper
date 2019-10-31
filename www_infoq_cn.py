@@ -23,7 +23,20 @@ class IQPaper(Paper):
     def _get_title(self):
         """ 抽取文章标题
         """
-        return self._driver.title
+        title_text = self._driver.title
+        #<div class="page-article">
+        #   <div class="main-content">
+        #       <div class="article-main">
+        #           <h1>
+        page_article = self._driver.find_element_by_class_name("page-article")
+        main_content = page_article.find_element_by_class_name("main-content")
+        article_main = main_content.find_element_by_class_name("article-main")
+        try:
+            h1 = self._driver.find_element_by_tag_name("h1")
+            title_text = h1.get_attribute('innerHTML').strip()
+        except:
+            pass
+        return title_text
 
     def _get_publish_info(self):
         """ 抽取文章发布信息
