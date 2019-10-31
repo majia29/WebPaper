@@ -193,6 +193,11 @@ class Paper():
         """
         pass
 
+    def _get_content(self):
+        """ 抽取文章正文
+        """
+        pass
+
     def _gen_markdown(self):
         """ 抽取文章正文，并转为markdown
         """
@@ -259,12 +264,20 @@ class Paper():
             # 图片序号变量
             "image_sn": 0,
         }
-        # 抽取markdown中的image url信息
+        ## 抽取markdown中的image url信息
+        # 基于markdown抽取
         image_regext = re.compile(r"\!\[.*?\]\((.+?)\)", re.IGNORECASE|re.UNICODE|re.LOCALE|re.DOTALL)
         image_urls = image_regext.findall(self.markdown)  # use .finditer(self.markdown)
+        # 使用selenium抽取
+        #image_elements = self.content.find_elements_by_tag_name("img")
+        # 基于html抽取
+        #image_regext = re.compile(r'<img[^>]+src="([^">]+)"', re.IGNORECASE|re.UNICODE|re.LOCALE|re.DOTALL)
+        #image_urls = image_regext.findall(self.content.get_attribute("innerHTML"))  # use .finditer(self.markdown)
         # 循环处理下载
         image_result, image_sn = {}, -1
         for image_url in image_urls:
+        #for image_element in image_elements:
+        #    image_url = image_element.get_attribute("src")
             print("[debug] image_url:", image_url)  # use image_url = image_url.groups()[0]
             # 如果已经处理过，跳过
             if image_url in image_result:
