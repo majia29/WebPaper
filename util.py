@@ -165,6 +165,7 @@ def init_webdriver(driverclass, driverpath=None):
     chrome_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36"
     safari_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15"
     firefox_agent= "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:60.0) Gecko/20100101 Firefox/60.0"
+    service_log = "{}.log".format(driverclass.lower())
     if driverclass.lower()=="chrome":
         chrome_path = driverpath
         # chrome config
@@ -194,9 +195,9 @@ def init_webdriver(driverclass, driverpath=None):
         chrome_options.add_experimental_option("prefs", chrome_prefs)
         # webdriver instance
         if chrome_path:
-            driver = WebDriver.Chrome(executable_path=chrome_path, chrome_options=chrome_options)
+            driver = WebDriver.Chrome(executable_path=chrome_path, chrome_options=chrome_options, service_log_path=service_log)
         else:
-            driver = WebDriver.Chrome(chrome_options=chrome_options)
+            driver = WebDriver.Chrome(chrome_options=chrome_options, service_log_path=service_log)
     elif driverclass.lower()=="firefox":
         firefox_path = driverpath
         firefox_options = WebDriver.FirefoxOptions()
@@ -204,9 +205,9 @@ def init_webdriver(driverclass, driverpath=None):
         firefox_options.set_preference("dom.ipc.plugins.enabled.libflashplayer.so", "true")
         firefox_options.set_preference("plugin.state.flash", 2)
         if firefox_path:
-            driver = WebDriver.Firefox(executable_path=firefox_path, firefox_options=firefox_options)
+            driver = WebDriver.Firefox(executable_path=firefox_path, firefox_options=firefox_options, service_log_path=service_log)
         else:
-            driver = WebDriver.Firefox(firefox_options=firefox_options)
+            driver = WebDriver.Firefox(firefox_options=firefox_options, service_log_path=service_log)
     else:
         raise RuntimeError("Unsupported DriverClass. {}".format(driverclass))
     #driver.implicitly_wait(3)
