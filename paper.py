@@ -312,7 +312,7 @@ class Paper():
                 img = Image.open(resp.raw)
             except Exception as exc:
                 if not resp.ok:
-                    resp.raise_for_status()
+                    print("[debug] image error: {}".format(resp.reason))
                 traceback.print_exc()
                 continue
             # 下载成功，进一步处理
