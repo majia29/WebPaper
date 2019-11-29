@@ -18,6 +18,7 @@ import time
 import traceback
 from ConfigParser import ConfigParser
 from datetime import datetime, timedelta
+from urlparse import urlparse, parse_qs as urlparse_query
 
 from html2text import HTML2Text
 from selenium import webdriver as WebDriver
@@ -28,7 +29,9 @@ __all__ = [
     "init_webdriver",
     "text2date",
     "html2markdown",
+    "pretty_markdown",
     "convert_image",
+    "markdown_remove_redirect",
 ]
 
 
@@ -301,11 +304,11 @@ def html2markdown(html, ext=None):
     text = ht.handle(html)
     # 额外操作
     if ext=="pretty":
-        text = _pretty_markdown(text)
+        text = pretty_markdown(text)
     return text
 
 
-def _pretty_markdown(mdtext):
+def pretty_markdown(mdtext):
     """ 将markdown文本格式美化
     美化处理以下内容：
     1. 多个空行合并为1个
@@ -364,3 +367,36 @@ def convert_image(img, fmt=None):
         return img.convert("RGB")
     return img
 
+
+def markdown_remove_redirect(mdtext, redirect_url):
+    """ 将markdown文本中的重定向链接移除
+    """
+    #抽取url，替换
+    url_regext = re.compile(r".*?\[.*?\]\(([http\://|https\://].+?)\)", re.IGNORECASE|re.UNICODE|re.LOCALE|re.DOTALL)
+    urls = url_regext.findall(mdtext)
+    for url in urls:
+        dest_url = _get_redirect_dest(url, redirect_url)
+        if dest_url<>url:
+            mdtext = mdtext.replace(url, dest_url)
+    return mdtext
+
+def _get_redirect_dest(url, redirect_url):
+    """ 抽取重定向链接中的目的url
+    """
+    # 重定向链接元信息
+    redir_info = urlparse(redirect_url)
+    redir_scheme = redir_info.scheme
+    redir_host   = redir_info.netloc
+    redir_path   = redir_info.path
+    redir_query  = urlparse_query(redir_info.query, keep_blank_values=True).keys()[0]
+    # 抽取重定向链接中的目的url
+    url_info = urlparse(url)
+    url_scheme = url_info.scheme
+    url_host   = url_info.netloc
+    url_path   = url_info.path
+    url_querys = urlparse_query(url_info.query, keep_blank_values=True)
+    # 如果链接是重定向链接，抽取重定向链接中的目的url
+    if redir_host==url_host and redir_path==url_path:
+        if redir_query in url_querys:
+            url = url_querys[redir_query][0]
+    return url
