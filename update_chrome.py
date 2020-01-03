@@ -21,16 +21,16 @@ __all__ = [
 reload(sys)
 sys.setdefaultencoding("utf-8")
 
-def download(url, local=None, showbar=True, chunksize=64*1024):
+def download(url, local=None, showbar=True, chunksize=65536):
     # 参数处理
     if local is None or local=="":
         local = os.path.basename(url)
     if local=="":
         local = "index.html"
     if chunksize is None:
-        chunksize = 64*1024
-    if chunksize<8*1024:
-        chunksize = 8*1024
+        chunksize = 65536
+    if chunksize<8192:
+        chunksize = 8192
     # requests
     headers = {'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:68.0) Gecko/20100101 Firefox/68.0"}
     resp = requests.get(url=url, headers=headers, timeout=5, stream=True)
@@ -143,10 +143,12 @@ def main(*argv, **kwargs):
             for item in node:
                 # 只处理Key项
                 if _removeNamespace(item.tag)=="Key":
-                    # 只处理.zip
-                    if item.text.endswith(".zip"):
+                    # 只处理chromedriver*.zip
+                    matchobj = re.match(r"(^.*)/chromedriver.*\.zip", item.text)
+                    if matchobj:
                         # 抽取version
-                        version = [int(v) for v in item.text.split("/")[0].split(".")]
+                        #version = [int(v) for v in item.text.split("/")[0].split(".")]
+                        version = [int(v) for v in matchobj.groups()[0].split(".")]
                         if cmp(version, latest_version)==1:
                             latest_version = version
                         files.append((item.text, version))
