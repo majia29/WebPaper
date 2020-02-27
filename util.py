@@ -146,13 +146,13 @@ def myconfig(configfile=None, fileformat=None, autocast=None):
     if fileformat is None:
         ext = os.path.splitext(configfile)[1].lower()
         if ext==".ini":
-            self._fileformat ="ini"
+            fileformat ="ini"
         elif ext==".xml":
-            self._fileformat ="xml"
+            fileformat ="xml"
         elif ext==".yaml":
-            self._fileformat ="yaml"
+            fileformat ="yaml"
         else:
-            self._fileformat ="ini"
+            fileformat ="ini"
     elif fileformat in ["ini", "xml", "yaml"]:
         fileformat = fileformat
     else:  # todo: 自动探测配置文件格式

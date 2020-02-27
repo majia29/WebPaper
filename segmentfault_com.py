@@ -87,8 +87,8 @@ class SFPaper(Paper):
         return publish_date
 
     def _get_content(self):
-        #<div class="article fmt article__content">
-        article_content = self._driver.find_element_by_class_name("article__content")
+        #<div class="article fmt article-content">
+        article_content = self._driver.find_element_by_class_name("article-content")
         return article_content
         
     def _gen_markdown(self):
